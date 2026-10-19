@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Alert, Button, Spinner, Tab, Tabs } from "@heroui/react";
+import { Alert, Button, ButtonGroup, Spinner, Tab, Tabs } from "@heroui/react";
 import { useDecodedPhoto } from "@/hooks/useDecodedPhoto";
 import { useEditorState } from "@/hooks/useEditorState";
 import { PREVIEW_MAX_EDGE } from "@/lib/constants";
@@ -10,6 +10,7 @@ import { exportPhoto } from "@/lib/photoIO";
 import { createOrientedCanvas } from "@/lib/renderPipeline";
 import { toEditSettings } from "@/lib/settings";
 import type { PhotoEntry } from "@/lib/types";
+import { useLanguage } from "./Providers";
 import { AdjustPanel } from "./AdjustPanel";
 import { BorderPanel } from "./BorderPanel";
 import { CropPanel } from "./CropPanel";
@@ -22,14 +23,15 @@ import { Preview } from "./Preview";
 
 type TabId = "crop" | "adjust" | "border" | "info";
 
-const TABS: readonly { id: TabId; label: string }[] = [
-  { id: "crop", label: "ตัดภาพ" },
-  { id: "adjust", label: "ปรับแต่ง" },
-  { id: "border", label: "ขอบ" },
-  { id: "info", label: "ข้อมูล" },
-];
+const TAB_LABELS: Record<TabId, "crop" | "adjust" | "border" | "info"> = {
+  crop: "crop",
+  adjust: "adjust",
+  border: "border",
+  info: "info",
+};
 
 export function Editor() {
+  const { language, setLanguage, t } = useLanguage();
   const editor = useEditorState();
   const { photos, activeEntry, shared } = editor;
   const [tab, setTab] = useState<TabId>("adjust");
@@ -54,7 +56,7 @@ export function Editor() {
         await exportPhoto(entry, shared);
       }
     } catch {
-      setExportError("ส่งออกไม่สำเร็จ รูปอาจใหญ่เกินกว่าที่เบราว์เซอร์รองรับ");
+      setExportError(t("exportError"));
     } finally {
       setExportProgress(null);
     }
@@ -91,10 +93,10 @@ export function Editor() {
 
   function renderStage() {
     if (!activeEntry) {
-      return <p className="text-default-500">อัปโหลดรูปเพื่อเริ่มต้น (เลือกได้หลายรูป)</p>;
+      return <p className="text-default-500">{t("startPrompt")}</p>;
     }
-    if (decoded.failed) return <Alert color="danger" title="ไม่สามารถเปิดรูปนี้ได้ อาจมีขนาดใหญ่เกินไป" />;
-    if (!oriented || !settings) return <Spinner aria-label="กำลังโหลดรูป" />;
+    if (decoded.failed) return <Alert color="danger" title={t("oversizedImage")} />;
+    if (!oriented || !settings) return <Spinner aria-label={t("loadingPhoto")} />;
     if (tab === "crop") {
       const aspect = resolveLockedAspect(activeEntry.edit.aspectId, oriented.width, oriented.height);
       return <CropTool source={oriented} crop={activeEntry.edit.crop} aspect={aspect} onChange={editor.setCrop} />;
@@ -107,17 +109,28 @@ export function Editor() {
   return (
     <main className="grid h-screen grid-cols-1 md:grid-cols-[380px_1fr]">
       <aside className="flex flex-col gap-4 overflow-y-auto bg-content1 p-5">
-        <h1 className="text-xl font-semibold">Photo Editor</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl font-semibold">{t("appTitle")}</h1>
+          <ButtonGroup size="sm" variant="flat" aria-label={t("language")}>
+            {(["th", "en"] as const).map((option) => (
+              <Button key={option} color={language === option ? "primary" : "default"} onPress={() => setLanguage(option)}>
+                {option.toUpperCase()}
+              </Button>
+            ))}
+          </ButtonGroup>
+        </div>
         <PhotoUpload currentCount={photos.length} onAdd={editor.addPhotos} />
         {activeEntry && (
           <Tabs
             fullWidth
-            aria-label="เครื่องมือแก้ไข"
+            aria-label={t("editTools")}
             selectedKey={tab}
-            onSelectionChange={(key) => setTab(TABS.find((item) => item.id === key)?.id ?? tab)}
+            onSelectionChange={(key) => {
+              if (key === "crop" || key === "adjust" || key === "border" || key === "info") setTab(key);
+            }}
           >
-            {TABS.map((item) => (
-              <Tab key={item.id} title={item.label} />
+            {(Object.keys(TAB_LABELS) as TabId[]).map((id) => (
+              <Tab key={id} title={t(TAB_LABELS[id])} />
             ))}
           </Tabs>
         )}
@@ -129,7 +142,7 @@ export function Editor() {
             startContent={<DownloadIcon />}
             onPress={() => activeEntry && handleExport([activeEntry])}
           >
-            ดาวน์โหลดรูปนี้
+            {t("downloadPhoto")}
           </Button>
           {photos.length > 1 && (
             <Button
@@ -139,8 +152,8 @@ export function Editor() {
               onPress={() => handleExport(photos)}
             >
               {exportProgress
-                ? `กำลังส่งออก ${exportProgress.done + 1}/${exportProgress.total}`
-                : `ดาวน์โหลดทั้งหมด (${photos.length} รูป)`}
+                ? `${t("exporting")} ${exportProgress.done + 1}/${exportProgress.total}`
+                : `${t("downloadAll")} (${photos.length})`}
             </Button>
           )}
           {exportError && <Alert color="danger" title={exportError} />}

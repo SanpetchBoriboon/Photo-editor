@@ -2,6 +2,7 @@
 
 import { Button, Image } from "@heroui/react";
 import type { PhotoEntry } from "@/lib/types";
+import { useLanguage } from "./Providers";
 import { CloseIcon } from "./icons";
 
 interface FilmstripProps {
@@ -12,13 +13,14 @@ interface FilmstripProps {
 }
 
 export function Filmstrip({ photos, activeId, onSelect, onRemove }: FilmstripProps) {
+  const { t } = useLanguage();
   return (
     <div className="flex gap-3 overflow-x-auto px-5 py-3">
       {photos.map((photo) => (
         <div key={photo.id} className="relative shrink-0">
           <button
             type="button"
-            aria-label={`เลือกรูป ${photo.fileName}`}
+            aria-label={`${t("selectedPhoto")} ${photo.fileName}`}
             aria-pressed={photo.id === activeId}
             onClick={() => onSelect(photo.id)}
             className={`block cursor-pointer overflow-hidden rounded-lg border-2 ${
@@ -31,7 +33,7 @@ export function Filmstrip({ photos, activeId, onSelect, onRemove }: FilmstripPro
             isIconOnly
             size="sm"
             radius="full"
-            aria-label={`ลบรูป ${photo.fileName}`}
+            aria-label={`${t("removePhoto")} ${photo.fileName}`}
             className="absolute -right-2 -top-2 z-10 h-6 w-6 min-w-6"
             onPress={() => onRemove(photo.id)}
           >

@@ -13,13 +13,14 @@ import {
 import { readExif } from "./exif";
 import { createOrientedCanvas, renderEdit } from "./renderPipeline";
 import { toEditSettings } from "./settings";
+import type { ValidationErrorKey } from "./i18n";
 import type { PhotoEntry, SharedSettings } from "./types";
 
 const REVOKE_URL_DELAY_MS = 10_000;
 
-export function validateImageFile(file: File): string | null {
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return "รองรับเฉพาะไฟล์ JPEG, PNG, WebP";
-  if (file.size > MAX_FILE_SIZE_BYTES) return "ไฟล์ใหญ่เกินไป (สูงสุด 50 MB)";
+export function validateImageFile(file: File): ValidationErrorKey | null {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return "unsupportedImage";
+  if (file.size > MAX_FILE_SIZE_BYTES) return "fileTooLarge";
   return null;
 }
 

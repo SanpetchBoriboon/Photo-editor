@@ -5,6 +5,7 @@ import { Alert } from "@heroui/react";
 import { MAX_PHOTOS } from "@/lib/constants";
 import { createPhotoEntry, validateImageFile } from "@/lib/photoIO";
 import type { PhotoEntry } from "@/lib/types";
+import { useLanguage } from "./Providers";
 import { UploadButton } from "./UploadButton";
 
 interface PhotoUploadProps {
@@ -13,6 +14,7 @@ interface PhotoUploadProps {
 }
 
 export function PhotoUpload({ currentCount, onAdd }: PhotoUploadProps) {
+  const { t } = useLanguage();
   const [problems, setProblems] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,18 +23,18 @@ export function PhotoUpload({ currentCount, onAdd }: PhotoUploadProps) {
     const found: string[] = [];
     const entries: PhotoEntry[] = [];
     const capacity = MAX_PHOTOS - currentCount;
-    if (files.length > capacity) found.push(`เพิ่มได้สูงสุด ${MAX_PHOTOS} รูป ข้ามไฟล์ที่เกิน`);
+    if (files.length > capacity) found.push(t("tooManyPhotos"));
     // Sequential on purpose: decoding many large images at once exhausts memory.
     for (const file of files.slice(0, Math.max(capacity, 0))) {
       const reason = validateImageFile(file);
       if (reason) {
-        found.push(`${file.name}: ${reason}`);
+        found.push(`${file.name}: ${t(reason)}`);
         continue;
       }
       try {
         entries.push(await createPhotoEntry(file));
       } catch {
-        found.push(`${file.name}: ไม่สามารถเปิดรูปนี้ได้`);
+        found.push(`${file.name}: ${t("cannotOpen")}`);
       }
     }
     onAdd(entries);
@@ -44,12 +46,12 @@ export function PhotoUpload({ currentCount, onAdd }: PhotoUploadProps) {
     <div className="flex flex-col gap-2">
       <UploadButton
         multiple
-        label={isLoading ? "กำลังโหลด..." : "เลือกรูปภาพ (เลือกได้หลายรูป)"}
+        label={isLoading ? t("loading") : t("upload")}
         isDisabled={isLoading || currentCount >= MAX_PHOTOS}
         onFiles={handleFiles}
       />
       {problems.length > 0 && (
-        <Alert color="danger" title="มีบางไฟล์ที่เพิ่มไม่ได้" description={problems.join(" • ")} />
+        <Alert color="danger" title={t("uploadProblems")} description={problems.join(" • ")} />
       )}
     </div>
   );

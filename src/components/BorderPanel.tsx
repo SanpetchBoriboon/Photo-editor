@@ -3,12 +3,8 @@
 import { Button, Switch } from "@heroui/react";
 import { BORDER_PERCENT_MAX, BORDER_PERCENT_MIN, DEFAULT_BORDER } from "@/lib/constants";
 import type { BorderSettings } from "@/lib/types";
+import { useLanguage } from "./Providers";
 import { Slider } from "./Slider";
-
-const COLOR_PRESETS = [
-  { label: "ขาว", value: "#ffffff" },
-  { label: "ดำ", value: "#000000" },
-] as const;
 
 interface BorderPanelProps {
   border: BorderSettings;
@@ -16,14 +12,19 @@ interface BorderPanelProps {
 }
 
 export function BorderPanel({ border, onChange }: BorderPanelProps) {
+  const { t } = useLanguage();
+  const colorPresets = [
+    { label: t("white"), value: "#ffffff" },
+    { label: t("black"), value: "#000000" },
+  ];
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-sm text-default-500">ขอบรูป (ใช้กับทุกรูป)</h2>
+      <h2 className="text-sm text-default-500">{t("borderForAll")}</h2>
       <Switch isSelected={border.enabled} onValueChange={(enabled) => onChange({ ...border, enabled })}>
-        ใส่ขอบ
+        {t("addBorder")}
       </Switch>
       <Slider
-        label="ขนาดขอบ (% ของด้านสั้นของรูป)"
+        label={t("borderSize")}
         value={border.percent}
         min={BORDER_PERCENT_MIN}
         max={BORDER_PERCENT_MAX}
@@ -31,7 +32,7 @@ export function BorderPanel({ border, onChange }: BorderPanelProps) {
       />
       <div className="flex items-center gap-2">
         <label htmlFor="border-color" className="text-sm">
-          สีขอบ
+          {t("borderColor")}
         </label>
         <input
           id="border-color"
@@ -40,7 +41,7 @@ export function BorderPanel({ border, onChange }: BorderPanelProps) {
           className="h-8 w-12 cursor-pointer border-0 bg-transparent p-0"
           onChange={(event) => onChange({ ...border, color: event.target.value })}
         />
-        {COLOR_PRESETS.map((preset) => (
+        {colorPresets.map((preset) => (
           <Button
             key={preset.value}
             size="sm"
@@ -53,9 +54,9 @@ export function BorderPanel({ border, onChange }: BorderPanelProps) {
         ))}
       </div>
       <Button size="sm" variant="light" className="self-start" onPress={() => onChange(DEFAULT_BORDER)}>
-        ค่าเริ่มต้น (ขาว 10%)
+        {t("defaultBorder")}
       </Button>
-      <p className="text-xs text-default-500">ข้อมูลกล้องและเครดิตจะแสดงที่แถบขอบด้านล่าง ต้องเปิดใช้ขอบ</p>
+      <p className="text-xs text-default-500">{t("borderHint")}</p>
     </div>
   );
 }

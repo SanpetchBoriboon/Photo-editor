@@ -2,6 +2,7 @@
 
 import { Button, Tooltip } from "@heroui/react";
 import { ASPECT_PRESETS } from "@/lib/constants";
+import { useLanguage } from "./Providers";
 import { FlipIcon, RotateLeftIcon, RotateRightIcon } from "./icons";
 
 interface CropPanelProps {
@@ -13,9 +14,12 @@ interface CropPanelProps {
 }
 
 export function CropPanel({ aspectId, onSelectAspect, onRotate, onFlip, onReset }: CropPanelProps) {
+  const { t } = useLanguage();
+  const aspectLabel = (id: string, label: string) =>
+    id === "free" ? t("free") : id === "original" ? t("original") : label;
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-sm text-default-500">สัดส่วนภาพ</h2>
+      <h2 className="text-sm text-default-500">{t("aspectRatio")}</h2>
       <div className="flex flex-wrap gap-2">
         {ASPECT_PRESETS.map((preset) => (
           <Button
@@ -26,30 +30,30 @@ export function CropPanel({ aspectId, onSelectAspect, onRotate, onFlip, onReset 
             variant={preset.id === aspectId ? "solid" : "flat"}
             onPress={() => onSelectAspect(preset.id)}
           >
-            {preset.label}
+            {aspectLabel(preset.id, preset.label)}
           </Button>
         ))}
       </div>
-      <p className="text-xs text-default-500">ลากกรอบหรือมุมบนรูปเพื่อกำหนดพื้นที่ crop</p>
-      <h2 className="text-sm text-default-500">หมุน / พลิก</h2>
+      <p className="text-xs text-default-500">{t("cropHint")}</p>
+      <h2 className="text-sm text-default-500">{t("rotateFlip")}</h2>
       <div className="flex gap-2">
-        <Tooltip content="หมุนซ้าย 90°">
-          <Button isIconOnly variant="flat" aria-label="หมุนซ้าย 90 องศา" onPress={() => onRotate(-1)}>
+        <Tooltip content={t("rotateLeft")}>
+          <Button isIconOnly variant="flat" aria-label={t("rotateLeft")} onPress={() => onRotate(-1)}>
             <RotateLeftIcon />
           </Button>
         </Tooltip>
-        <Tooltip content="หมุนขวา 90°">
-          <Button isIconOnly variant="flat" aria-label="หมุนขวา 90 องศา" onPress={() => onRotate(1)}>
+        <Tooltip content={t("rotateRight")}>
+          <Button isIconOnly variant="flat" aria-label={t("rotateRight")} onPress={() => onRotate(1)}>
             <RotateRightIcon />
           </Button>
         </Tooltip>
-        <Tooltip content="พลิกแนวนอน">
-          <Button isIconOnly variant="flat" aria-label="พลิกแนวนอน" onPress={onFlip}>
+        <Tooltip content={t("flipHorizontal")}>
+          <Button isIconOnly variant="flat" aria-label={t("flipHorizontal")} onPress={onFlip}>
             <FlipIcon />
           </Button>
         </Tooltip>
         <Button variant="light" onPress={onReset}>
-          รีเซ็ตการตัดภาพ
+          {t("resetCrop")}
         </Button>
       </div>
     </div>

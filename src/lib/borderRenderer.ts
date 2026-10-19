@@ -2,7 +2,7 @@ import { buildCaptionLines } from "./caption";
 import type { CaptionLines } from "./caption";
 import type { BorderSettings, CaptionSelection, CreditSettings, ExifData } from "./types";
 
-const FONT_FAMILY = "system-ui, sans-serif";
+const FALLBACK_FONT_FAMILY = "sans-serif";
 const CREDIT_FONT_RATIO = 0.28; // of border size
 const TITLE_FONT_RATIO = 0.26;
 const DETAILS_FONT_RATIO = 0.17;
@@ -32,6 +32,10 @@ function safeColor(color: string): string {
   return HEX_COLOR_PATTERN.test(color) ? color : FALLBACK_BORDER_COLOR;
 }
 
+function getFontFamily(): string {
+  return getComputedStyle(document.body).fontFamily || FALLBACK_FONT_FAMILY;
+}
+
 function isLightColor(hexColor: string): boolean {
   const red = parseInt(hexColor.slice(1, 3), HEX_RADIX);
   const green = parseInt(hexColor.slice(3, 5), HEX_RADIX);
@@ -51,7 +55,7 @@ function drawCreditImage(target: CaptionContext, image: ImageBitmap): void {
 
 function drawCreditText(target: CaptionContext, text: string): void {
   const { context, border, width, height } = target;
-  context.font = `${Math.round(border * CREDIT_FONT_RATIO)}px ${FONT_FAMILY}`;
+  context.font = `${Math.round(border * CREDIT_FONT_RATIO)}px ${getFontFamily()}`;
   context.textAlign = "right";
   context.fillText(text, width - border, height - border / 2, (width - 2 * border) * RIGHT_AREA_WIDTH_RATIO);
 }
@@ -82,7 +86,7 @@ function drawLeftCaption(target: CaptionContext, captionLines: CaptionLines): vo
   let lineTop = height - border / 2 - blockHeight / 2;
   context.textAlign = "left";
   for (const line of lines) {
-    context.font = `${line.weight} ${Math.round(line.fontSize)}px ${FONT_FAMILY}`;
+    context.font = `${line.weight} ${Math.round(line.fontSize)}px ${getFontFamily()}`;
     context.globalAlpha = line.opacity;
     context.fillText(line.text, border, lineTop + line.fontSize / 2, (width - 2 * border) * LEFT_TEXT_WIDTH_RATIO);
     lineTop += line.fontSize + gap;
