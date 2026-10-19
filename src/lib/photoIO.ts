@@ -104,6 +104,7 @@ function triggerDownload(blob: Blob, fileName: string): void {
 
 // Decodes the full-resolution image only for the duration of the export.
 export async function exportPhoto(entry: PhotoEntry, shared: SharedSettings): Promise<void> {
+  await document.fonts.ready;
   const bitmap = await decodeImage(entry.file);
   try {
     const settings = toEditSettings(entry.edit, shared);

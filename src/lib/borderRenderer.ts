@@ -13,6 +13,7 @@ const BRAND_LOGO_GAP_RATIO = 0.12;
 const BRAND_LOGO_MAX_WIDTH_RATIO = 0.45;
 const ICON_VIEWBOX_SIZE = 24;
 const CREDIT_IMAGE_HEIGHT_RATIO = 0.5; // of border size
+const BOTTOM_BORDER_RATIO = 1.2;
 const LEFT_TEXT_WIDTH_RATIO = 0.6; // of the width between side borders
 const RIGHT_AREA_WIDTH_RATIO = 0.4;
 const DARK_TEXT_COLOR = "#222222";
@@ -28,6 +29,7 @@ const FALLBACK_BORDER_COLOR = "#ffffff";
 interface CaptionContext {
   context: CanvasRenderingContext2D;
   border: number;
+  bottomBorder: number;
   width: number;
   height: number;
 }
@@ -37,7 +39,7 @@ function safeColor(color: string): string {
 }
 
 function getFontFamily(): string {
-  return getComputedStyle(document.body).fontFamily || FALLBACK_FONT_FAMILY;
+  return getComputedStyle(document.documentElement).getPropertyValue("--font-sarabun").trim() || FALLBACK_FONT_FAMILY;
 }
 
 function isLightColor(hexColor: string): boolean {
@@ -48,20 +50,20 @@ function isLightColor(hexColor: string): boolean {
 }
 
 function drawCreditImage(target: CaptionContext, image: ImageBitmap): void {
-  const { context, border, width, height } = target;
-  const maxHeight = border * CREDIT_IMAGE_HEIGHT_RATIO;
+  const { context, border, bottomBorder, width, height } = target;
+  const maxHeight = bottomBorder * CREDIT_IMAGE_HEIGHT_RATIO;
   const maxWidth = (width - 2 * border) * RIGHT_AREA_WIDTH_RATIO;
   const scale = Math.min(maxHeight / image.height, maxWidth / image.width);
   const drawWidth = image.width * scale;
   const drawHeight = image.height * scale;
-  context.drawImage(image, width - border - drawWidth, height - border / 2 - drawHeight / 2, drawWidth, drawHeight);
+  context.drawImage(image, width - border - drawWidth, height - bottomBorder / 2 - drawHeight / 2, drawWidth, drawHeight);
 }
 
 function drawCreditText(target: CaptionContext, text: string): void {
-  const { context, border, width, height } = target;
+  const { context, border, bottomBorder, width, height } = target;
   context.font = `${Math.round(border * CREDIT_FONT_RATIO)}px ${getFontFamily()}`;
   context.textAlign = "right";
-  context.fillText(text, width - border, height - border / 2, (width - 2 * border) * RIGHT_AREA_WIDTH_RATIO);
+  context.fillText(text, width - border, height - bottomBorder / 2, (width - 2 * border) * RIGHT_AREA_WIDTH_RATIO);
 }
 
 function drawCredit(target: CaptionContext, credit: CreditSettings): void {
@@ -140,7 +142,7 @@ function drawBrandLogo(target: CaptionContext, brand: string, centerY: number, v
 
 // Draws the title and details as one block, vertically centered in the bottom border.
 function drawLeftCaption(target: CaptionContext, captionLines: CaptionLines): void {
-  const { context, border, width, height } = target;
+  const { context, border, bottomBorder, width, height } = target;
   const logo = findBrandLogo(captionLines.brand);
   const title = logo
     ? captionLines.model
@@ -160,10 +162,10 @@ function drawLeftCaption(target: CaptionContext, captionLines: CaptionLines): vo
   }
   const gap = border * LINE_GAP_RATIO;
   const blockHeight = lines.reduce((sum, line) => sum + line.fontSize, 0) + gap * (lines.length - 1);
-  let lineTop = height - border / 2 - blockHeight / 2;
+  let lineTop = height - bottomBorder / 2 - blockHeight / 2;
   context.textAlign = "left";
   const titleLine = lines.find((line) => line.isTitle);
-  const titleCenterY = titleLine ? lineTop + titleLine.fontSize / 2 : height - border / 2;
+  const titleCenterY = titleLine ? lineTop + titleLine.fontSize / 2 : height - bottomBorder / 2;
   let logoHeight = titleLine?.fontSize ?? border * TITLE_FONT_RATIO;
   if (titleLine && captionLines.model) {
     context.font = `${titleLine.weight} ${Math.round(titleLine.fontSize)}px ${getFontFamily()}`;
@@ -194,10 +196,11 @@ export function addBorder(source: HTMLCanvasElement, input: BorderInput): HTMLCa
   const { border: settings, caption, credit, exif } = input;
   const border = Math.round((Math.min(source.width, source.height) * settings.percent) / 100);
   if (!settings.enabled || border <= 0) return source;
+  const bottomBorder = Math.round(border * BOTTOM_BORDER_RATIO);
 
   const output = document.createElement("canvas");
   output.width = source.width + 2 * border;
-  output.height = source.height + 2 * border;
+  output.height = source.height + border + bottomBorder;
   const context = output.getContext("2d");
   if (!context) return source;
 
@@ -208,7 +211,7 @@ export function addBorder(source: HTMLCanvasElement, input: BorderInput): HTMLCa
 
   context.fillStyle = isLightColor(color) ? DARK_TEXT_COLOR : LIGHT_TEXT_COLOR;
   context.textBaseline = "middle";
-  const target: CaptionContext = { context, border, width: output.width, height: output.height };
+  const target: CaptionContext = { context, border, bottomBorder, width: output.width, height: output.height };
   drawLeftCaption(target, buildCaptionLines(exif, caption));
   drawCredit(target, credit);
   return output;

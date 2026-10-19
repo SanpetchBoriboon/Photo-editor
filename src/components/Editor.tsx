@@ -70,7 +70,7 @@ export function Editor() {
     if (straightenDraft === null || !oriented) return;
     editor.setStraighten(straightenDraft, oriented.width, oriented.height);
     setStraightenDraft(null);
-    setTab("adjust");
+    setTab("border");
   }
 
   function cancelStraightenDraft(): void {
@@ -163,7 +163,10 @@ export function Editor() {
     <main className="editor-layout">
       <aside className="editor-sidebar">
         <div className="editor-header">
-          <h1 className="text-xl font-semibold">{t("appTitle")}</h1>
+          <h1 className="text-xl font-semibold">
+            <span className="text-default-500">Still</span>
+            <span className="text-primary">frame</span>
+          </h1>
           <ButtonGroup size="sm" variant="flat" aria-label={t("language")}>
             {(["th", "en"] as const).map((option) => (
               <Button key={option} color={language === option ? "primary" : "default"} onPress={() => setLanguage(option)}>

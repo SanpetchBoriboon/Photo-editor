@@ -2,7 +2,7 @@ export type Language = "th" | "en";
 
 export const messages = {
   th: {
-    appTitle: "Photo Editor",
+    appTitle: "Stillframe",
     language: "ภาษา",
     crop: "ตัดภาพ",
     adjust: "ปรับแต่ง",
@@ -74,7 +74,7 @@ export const messages = {
     removePhoto: "ลบรูป",
   },
   en: {
-    appTitle: "Photo Editor",
+    appTitle: "Stillframe",
     language: "Language",
     crop: "Crop",
     adjust: "Adjust",

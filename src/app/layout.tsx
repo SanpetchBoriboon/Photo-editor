@@ -11,7 +11,7 @@ const sarabun = Sarabun({
 });
 
 export const metadata: Metadata = {
-  title: "Photo Editor",
+  title: "Stillframe | Photo Editor",
   description: "Crop, adjust and add borders with camera info to your photos",
 };
 

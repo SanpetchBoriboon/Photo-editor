@@ -49,7 +49,10 @@ export function InfoPanel({ exif, caption, credit, onCaptionChange, onCreditChan
 
   function handleModeChange(value: string): void {
     const mode = creditModes.find((item) => item.value === value)?.value;
-    if (mode) onCreditChange({ ...credit, mode });
+    if (mode) {
+      setError("");
+      onCreditChange({ ...credit, mode });
+    }
   }
 
   return (
@@ -76,16 +79,22 @@ export function InfoPanel({ exif, caption, credit, onCaptionChange, onCreditChan
           </Radio>
         ))}
       </RadioGroup>
-      <Input
-        size="sm"
-        label={t("creditText")}
-        placeholder={t("creditPlaceholder")}
-        maxLength={CREDIT_TEXT_MAX_LENGTH}
-        value={credit.text}
-        onValueChange={(text) => onCreditChange({ ...credit, mode: "text", text })}
-      />
-      <UploadButton label={t("uploadCredit")} onFiles={handleCreditImage} />
-      {error && <Alert color="danger" title={error} />}
+      {credit.mode === "text" && (
+        <Input
+          size="sm"
+          label={t("creditText")}
+          placeholder={t("creditPlaceholder")}
+          maxLength={CREDIT_TEXT_MAX_LENGTH}
+          value={credit.text}
+          onValueChange={(text) => onCreditChange({ ...credit, mode: "text", text })}
+        />
+      )}
+      {credit.mode === "image" && (
+        <>
+          <UploadButton label={t("uploadCredit")} onFiles={handleCreditImage} />
+          {error && <Alert color="danger" title={error} />}
+        </>
+      )}
     </div>
   );
 }
