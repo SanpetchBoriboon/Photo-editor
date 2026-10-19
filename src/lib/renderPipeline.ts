@@ -26,7 +26,7 @@ export function createOrientedCanvas(
   const context = canvas.getContext("2d");
   if (!context) return canvas;
   context.translate(canvas.width / 2, canvas.height / 2);
-  context.rotate(orientation.rotation * DEGREES_TO_RADIANS);
+  context.rotate((orientation.rotation + orientation.straighten) * DEGREES_TO_RADIANS);
   context.scale(orientation.flipHorizontal ? -1 : 1, 1);
   context.drawImage(source, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
   return canvas;

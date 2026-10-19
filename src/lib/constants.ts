@@ -26,13 +26,17 @@ export const EXPORT_BACKGROUND = "#ffffff";
 
 export const MIN_CROP_SIZE = 0.05;
 export const CREDIT_TEXT_MAX_LENGTH = 60;
+export const STRAIGHTEN_MIN_DEGREES = -45;
+export const STRAIGHTEN_MAX_DEGREES = 45;
+export const STRAIGHTEN_STEP_DEGREES = 0.1;
+export const STRAIGHTEN_DISPLAY_DECIMALS = 1;
 
 export const BORDER_PERCENT_MIN = 1;
 export const BORDER_PERCENT_MAX = 30;
 export const DEFAULT_BORDER: BorderSettings = { enabled: true, percent: 10, color: "#ffffff" };
 
 export const FULL_CROP: CropRect = { x: 0, y: 0, width: 1, height: 1 };
-export const DEFAULT_ORIENTATION: Orientation = { rotation: 0, flipHorizontal: false };
+export const DEFAULT_ORIENTATION: Orientation = { rotation: 0, straighten: 0, flipHorizontal: false };
 
 export const DEFAULT_ADJUSTMENTS: Adjustments = {
   exposure: 0,
@@ -48,6 +52,7 @@ export const DEFAULT_ADJUSTMENTS: Adjustments = {
 export const DEFAULT_CAPTION: CaptionSelection = {
   make: true,
   model: true,
+  lens: true,
   aperture: true,
   shutter: true,
 };
@@ -95,6 +100,7 @@ export const ASPECT_PRESETS: readonly AspectPreset[] = [
 export const CAPTION_FIELD_LABELS: Record<CaptionField, string> = {
   make: "ยี่ห้อกล้อง",
   model: "รุ่นกล้อง",
+  lens: "เลนส์",
   aperture: "ค่ารูรับแสง",
   shutter: "ความเร็วชัตเตอร์",
 };

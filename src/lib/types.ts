@@ -1,6 +1,8 @@
 export interface ExifData {
   make?: string;
   model?: string;
+  lensMake?: string;
+  lensModel?: string;
   exposureTime?: number;
   fNumber?: number;
 }
@@ -29,6 +31,7 @@ export type Rotation = 0 | 90 | 180 | 270;
 
 export interface Orientation {
   rotation: Rotation;
+  straighten: number;
   flipHorizontal: boolean;
 }
 
@@ -38,7 +41,7 @@ export interface BorderSettings {
   color: string;
 }
 
-export type CaptionField = "make" | "model" | "aperture" | "shutter";
+export type CaptionField = "make" | "model" | "lens" | "aperture" | "shutter";
 
 export type CaptionSelection = Record<CaptionField, boolean>;
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { DEFAULT_EDIT, DEFAULT_SHARED, FREE_ASPECT_ID, FULL_CROP, DEFAULT_ORIENTATION } from "@/lib/constants";
-import { fitCropToAspect, resolveLockedAspect } from "@/lib/cropMath";
+import { adjustCropForStraighten, fitCropToAspect, resolveLockedAspect } from "@/lib/cropMath";
 import type {
   Adjustments,
   BorderSettings,
@@ -74,6 +74,11 @@ export function useEditorState() {
     selectPhoto: setActiveId,
     rotate,
     flip,
+    setStraighten: (straighten: number, imageWidth: number, imageHeight: number) =>
+      updateActiveEdit((edit) => ({
+        orientation: { ...edit.orientation, straighten },
+        crop: adjustCropForStraighten(edit.crop, imageWidth, imageHeight, edit.orientation.straighten, straighten),
+      })),
     selectAspect,
     resetGeometry: () =>
       updateActiveEdit(() => ({ orientation: DEFAULT_ORIENTATION, crop: FULL_CROP, aspectId: DEFAULT_EDIT.aspectId })),

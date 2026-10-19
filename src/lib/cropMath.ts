@@ -1,6 +1,8 @@
 import { ASPECT_PRESETS, MIN_CROP_SIZE } from "./constants";
 import type { CropHandle, CropRect } from "./types";
 
+const DEGREES_TO_RADIANS = Math.PI / 180;
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -22,6 +24,44 @@ export function fitCropToAspect(normalizedAspect: number): CropRect {
   const width = normalizedAspect >= 1 ? 1 : normalizedAspect;
   const height = normalizedAspect >= 1 ? 1 / normalizedAspect : 1;
   return { x: (1 - width) / 2, y: (1 - height) / 2, width, height };
+}
+
+function getSafeCropRect(imageWidth: number, imageHeight: number, crop: CropRect, angleDegrees: number): CropRect {
+  const angle = Math.abs(angleDegrees) * DEGREES_TO_RADIANS;
+  const cosine = Math.abs(Math.cos(angle));
+  const sine = Math.abs(Math.sin(angle));
+  const pixelAspect = (crop.width * imageWidth) / (crop.height * imageHeight);
+  const safeHeight = Math.min(
+    imageWidth / (pixelAspect * cosine + sine),
+    imageHeight / (pixelAspect * sine + cosine),
+  );
+  const safeWidth = pixelAspect * safeHeight;
+  const width = safeWidth / imageWidth;
+  const height = safeHeight / imageHeight;
+  return { x: (1 - width) / 2, y: (1 - height) / 2, width, height };
+}
+
+// Shrinks and repositions a crop inside the rotated image while preserving its ratio and framing.
+export function adjustCropForStraighten(
+  crop: CropRect,
+  imageWidth: number,
+  imageHeight: number,
+  previousAngle: number,
+  nextAngle: number,
+): CropRect {
+  const previousSafe = getSafeCropRect(imageWidth, imageHeight, crop, previousAngle);
+  const nextSafe = getSafeCropRect(imageWidth, imageHeight, crop, nextAngle);
+  const scale = Math.min(crop.width / previousSafe.width, crop.height / previousSafe.height, 1);
+  const centerX = clamp((crop.x + crop.width / 2 - previousSafe.x) / previousSafe.width, scale / 2, 1 - scale / 2);
+  const centerY = clamp((crop.y + crop.height / 2 - previousSafe.y) / previousSafe.height, scale / 2, 1 - scale / 2);
+  const width = nextSafe.width * scale;
+  const height = nextSafe.height * scale;
+  return {
+    x: nextSafe.x + centerX * nextSafe.width - width / 2,
+    y: nextSafe.y + centerY * nextSafe.height - height / 2,
+    width,
+    height,
+  };
 }
 
 export function moveCrop(crop: CropRect, deltaX: number, deltaY: number): CropRect {

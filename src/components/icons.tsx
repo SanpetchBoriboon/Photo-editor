@@ -64,3 +64,31 @@ export const CloseIcon = () => (
     <path d="m6 6 12 12" />
   </Icon>
 );
+
+export const CropIcon = () => (
+  <Icon>
+    <path d="M6 3v12a3 3 0 0 0 3 3h12" />
+    <path d="M18 21V9a3 3 0 0 0-3-3H3" />
+  </Icon>
+);
+
+export const AdjustIcon = () => (
+  <Icon>
+    <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3" />
+    <path d="M2 14h4M10 8h4M18 16h4" />
+  </Icon>
+);
+
+export const BorderIcon = () => (
+  <Icon>
+    <rect x="3" y="3" width="18" height="18" rx="1" />
+    <rect x="7" y="7" width="10" height="10" rx="1" />
+  </Icon>
+);
+
+export const InfoIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5M12 8h.01" />
+  </Icon>
+);

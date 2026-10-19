@@ -15,6 +15,8 @@ const TAG_MODEL = 0x0110;
 const TAG_EXIF_IFD_POINTER = 0x8769;
 const TAG_EXPOSURE_TIME = 0x829a;
 const TAG_F_NUMBER = 0x829d;
+const TAG_LENS_MAKE = 0xa433;
+const TAG_LENS_MODEL = 0xa434;
 
 const TYPE_ASCII = 2;
 const TYPE_RATIONAL = 5;
@@ -95,6 +97,8 @@ function parseExif(buffer: ArrayBuffer): ExifData {
   return {
     make: readString(view, mainIfd.get(TAG_MAKE)),
     model: readString(view, mainIfd.get(TAG_MODEL)),
+    lensMake: readString(view, exifIfd.get(TAG_LENS_MAKE)),
+    lensModel: readString(view, exifIfd.get(TAG_LENS_MODEL)),
     exposureTime: readNumber(view, exifIfd.get(TAG_EXPOSURE_TIME), littleEndian),
     fNumber: readNumber(view, exifIfd.get(TAG_F_NUMBER), littleEndian),
   };

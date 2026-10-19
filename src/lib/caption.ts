@@ -15,16 +15,23 @@ export function formatShutter(exposureTime: number | undefined): string {
 }
 
 export function getExifTexts(exif: ExifData): Record<CaptionField, string> {
+  const lensMake = exif.lensMake?.trim() ?? "";
+  const lensModel = exif.lensModel?.trim() ?? "";
+  const fullLensName = lensModel.toLowerCase().startsWith(lensMake.toLowerCase())
+    ? lensModel
+    : [lensMake, lensModel].filter(Boolean).join(" ");
   return {
     make: exif.make ?? "",
     model: exif.model ?? "",
+    lens: fullLensName,
     aperture: formatAperture(exif.fNumber),
     shutter: formatShutter(exif.exposureTime),
   };
 }
 
 export interface CaptionLines {
-  title: string;
+  brand: string;
+  model: string;
   details: string;
 }
 
@@ -36,13 +43,15 @@ function joinNonEmpty(parts: string[], separator: string): string {
 export function buildCaptionLines(exif: ExifData, selection: CaptionSelection): CaptionLines {
   const texts = getExifTexts(exif);
   const make = selection.make ? texts.make : "";
-  const model = selection.model ? texts.model : "";
-  // Many models already start with the brand ("Canon EOS R5"), so skip the duplicate.
-  const modelHasMake = make !== "" && model.toLowerCase().startsWith(make.toLowerCase());
+  let model = selection.model ? texts.model : "";
+  if (make && model.toLowerCase().startsWith(make.toLowerCase())) {
+    model = model.slice(make.length).replace(/^[\s\-_]+/, "");
+  }
   return {
-    title: joinNonEmpty([modelHasMake ? "" : make, model], " "),
+    brand: make,
+    model,
     details: joinNonEmpty(
-      [selection.aperture ? texts.aperture : "", selection.shutter ? texts.shutter : ""],
+      [selection.lens ? texts.lens : "", selection.aperture ? texts.aperture : "", selection.shutter ? texts.shutter : ""],
       DETAILS_SEPARATOR,
     ),
   };

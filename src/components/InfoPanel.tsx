@@ -9,7 +9,7 @@ import type { CaptionField, CaptionSelection, CreditMode, CreditSettings, ExifDa
 import { useLanguage } from "./Providers";
 import { UploadButton } from "./UploadButton";
 
-const CAPTION_FIELDS: readonly CaptionField[] = ["make", "model", "aperture", "shutter"];
+const CAPTION_FIELDS: readonly CaptionField[] = ["make", "model", "lens", "aperture", "shutter"];
 interface InfoPanelProps {
   exif: ExifData;
   caption: CaptionSelection;
@@ -25,6 +25,7 @@ export function InfoPanel({ exif, caption, credit, onCaptionChange, onCreditChan
   const fieldLabels: Record<CaptionField, string> = {
     make: t("make"),
     model: t("model"),
+    lens: t("lens"),
     aperture: t("aperture"),
     shutter: t("shutter"),
   };
