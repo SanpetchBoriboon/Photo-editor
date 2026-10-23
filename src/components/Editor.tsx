@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Button, ButtonGroup, Spinner, Tab, Tabs } from "@heroui/react";
 import { useDecodedPhoto } from "@/hooks/useDecodedPhoto";
 import { useEditorState } from "@/hooks/useEditorState";
@@ -17,7 +17,15 @@ import { BorderPanel } from "./BorderPanel";
 import { CropPanel } from "./CropPanel";
 import { CropTool } from "./CropTool";
 import { Filmstrip } from "./Filmstrip";
-import { AdjustIcon, BorderIcon, CropIcon, DownloadIcon, InfoIcon } from "./icons";
+import {
+  AdjustIcon,
+  BorderIcon,
+  CropIcon,
+  DownloadIcon,
+  InfoIcon,
+  NextPhotoIcon,
+  PreviousPhotoIcon,
+} from "./icons";
 import { InfoPanel } from "./InfoPanel";
 import { PhotoUpload } from "./PhotoUpload";
 import { Preview } from "./Preview";
@@ -34,7 +42,7 @@ const TAB_ITEMS = [
 export function Editor() {
   const { language, setLanguage, t } = useLanguage();
   const editor = useEditorState();
-  const { photos, activeEntry, shared } = editor;
+  const { photos, activeEntry, shared, selectPhoto: setActivePhoto } = editor;
   const [tab, setTab] = useState<TabId>("adjust");
   const [straightenDraft, setStraightenDraft] = useState<number | null>(null);
   const [exportError, setExportError] = useState("");
@@ -82,6 +90,38 @@ export function Editor() {
     setStraightenDraft(null);
     editor.selectPhoto(id);
   }
+
+  useEffect(() => {
+    function handlePhotoNavigation(event: KeyboardEvent): void {
+      if (
+        (event.key !== "ArrowLeft" && event.key !== "ArrowRight") ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.defaultPrevented
+      ) {
+        return;
+      }
+      if (
+        event.target instanceof Element &&
+        event.target.closest(
+          "input:not([type='file']), textarea, select, [contenteditable='true'], [role='slider'], [role='tab']",
+        )
+      ) {
+        return;
+      }
+      const currentIndex = photos.findIndex((photo) => photo.id === activeEntry?.id);
+      const nextIndex = currentIndex + (event.key === "ArrowLeft" ? -1 : 1);
+      if (nextIndex < 0 || nextIndex >= photos.length) return;
+      event.preventDefault();
+      setStraightenDraft(null);
+      setActivePhoto(photos[nextIndex].id);
+    }
+
+    window.addEventListener("keydown", handlePhotoNavigation);
+    return () => window.removeEventListener("keydown", handlePhotoNavigation);
+  }, [photos, activeEntry?.id, setActivePhoto]);
 
   function removePhoto(id: string): void {
     setStraightenDraft(null);
@@ -177,6 +217,7 @@ export function Editor() {
   }
 
   const isExporting = exportProgress !== null;
+  const activePhotoIndex = photos.findIndex((photo) => photo.id === activeEntry?.id);
 
   return (
     <main className="editor-layout">
@@ -250,7 +291,31 @@ export function Editor() {
         </div>
       </aside>
       <section className="editor-workspace">
-        <div className="editor-stage">{renderStage()}</div>
+        <div className="editor-stage">
+          {photos.length > 1 && (
+            <Button
+              isIconOnly
+              variant="flat"
+              aria-label={t("previousPhoto")}
+              isDisabled={activePhotoIndex <= 0}
+              onPress={() => activePhotoIndex > 0 && selectPhoto(photos[activePhotoIndex - 1].id)}
+            >
+              <PreviousPhotoIcon />
+            </Button>
+          )}
+          {renderStage()}
+          {photos.length > 1 && (
+            <Button
+              isIconOnly
+              variant="flat"
+              aria-label={t("nextPhoto")}
+              isDisabled={activePhotoIndex >= photos.length - 1}
+              onPress={() => activePhotoIndex < photos.length - 1 && selectPhoto(photos[activePhotoIndex + 1].id)}
+            >
+              <NextPhotoIcon />
+            </Button>
+          )}
+        </div>
         {photos.length > 0 && (
           <div className="editor-filmstrip">
             <Filmstrip photos={photos} activeId={activeEntry?.id ?? null} onSelect={selectPhoto} onRemove={removePhoto} />

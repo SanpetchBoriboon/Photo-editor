@@ -65,6 +65,18 @@ export const CloseIcon = () => (
   </Icon>
 );
 
+export const PreviousPhotoIcon = () => (
+  <Icon>
+    <path d="m15 18-6-6 6-6" />
+  </Icon>
+);
+
+export const NextPhotoIcon = () => (
+  <Icon>
+    <path d="m9 18 6-6-6-6" />
+  </Icon>
+);
+
 export const CropIcon = () => (
   <Icon>
     <path d="M6 3v12a3 3 0 0 0 3 3h12" />

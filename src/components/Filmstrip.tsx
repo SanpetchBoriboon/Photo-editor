@@ -1,5 +1,4 @@
-"use client";
-
+import { useEffect, useRef } from "react";
 import { Button, Image } from "@heroui/react";
 import type { PhotoEntry } from "@/lib/types";
 import { useLanguage } from "./Providers";
@@ -14,11 +13,18 @@ interface FilmstripProps {
 
 export function Filmstrip({ photos, activeId, onSelect, onRemove }: FilmstripProps) {
   const { t } = useLanguage();
+  const activePhotoRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    activePhotoRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+  }, [activeId]);
+
   return (
     <div className="flex gap-3 overflow-x-auto px-5 py-3">
       {photos.map((photo) => (
         <div key={photo.id} className="relative shrink-0">
           <button
+            ref={photo.id === activeId ? activePhotoRef : undefined}
             type="button"
             aria-label={`${t("selectedPhoto")} ${photo.fileName}`}
             aria-pressed={photo.id === activeId}

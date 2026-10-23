@@ -73,6 +73,8 @@ export const messages = {
     creditPlaceholder: "เช่น Photo by ชื่อคุณ",
     uploadCredit: "อัปโหลดโลโก้/รูปเครดิต",
     selectedPhoto: "เลือกรูป",
+    previousPhoto: "รูปก่อนหน้า",
+    nextPhoto: "รูปถัดไป",
     removePhoto: "ลบรูป",
   },
   en: {
@@ -147,6 +149,8 @@ export const messages = {
     creditPlaceholder: "e.g. Photo by your name",
     uploadCredit: "Upload logo / credit image",
     selectedPhoto: "Select photo",
+    previousPhoto: "Previous photo",
+    nextPhoto: "Next photo",
     removePhoto: "Remove photo",
   },
 } as const;
