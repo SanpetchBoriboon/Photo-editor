@@ -7,7 +7,7 @@ import { useEditorState } from "@/hooks/useEditorState";
 import { PREVIEW_MAX_EDGE } from "@/lib/constants";
 import { getCaptionTexts, hasMissingCaptionFields } from "@/lib/caption";
 import { adjustCropForStraighten, resolveLockedAspect } from "@/lib/cropMath";
-import { exportPhoto } from "@/lib/photoIO";
+import { exportPhoto, exportPhotosAsZip } from "@/lib/photoIO";
 import { createOrientedCanvas } from "@/lib/renderPipeline";
 import { toEditSettings } from "@/lib/settings";
 import type { PhotoEntry } from "@/lib/types";
@@ -91,9 +91,12 @@ export function Editor() {
   async function handleExport(entries: PhotoEntry[]): Promise<void> {
     setExportError("");
     try {
-      for (const [index, entry] of entries.entries()) {
-        setExportProgress({ done: index, total: entries.length });
-        await exportPhoto(entry, shared);
+      if (entries.length === 1) {
+        setExportProgress({ done: 0, total: 1 });
+        await exportPhoto(entries[0], shared);
+      } else {
+        setExportProgress({ done: 0, total: entries.length });
+        await exportPhotosAsZip(entries, shared, (done) => setExportProgress({ done, total: entries.length }));
       }
     } catch {
       setExportError(t("exportError"));
@@ -239,7 +242,7 @@ export function Editor() {
               onPress={() => handleExport(photos)}
             >
               {exportProgress
-                ? `${t("exporting")} ${exportProgress.done + 1}/${exportProgress.total}`
+                ? `${t("exporting")} ${exportProgress.done}/${exportProgress.total}`
                 : `${t("downloadAll")} (${photos.length})`}
             </Button>
           )}

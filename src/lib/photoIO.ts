@@ -10,6 +10,7 @@ import {
   THUMBNAIL_QUALITY,
   THUMBNAIL_WIDTH,
 } from "./constants";
+import { zipSync } from "fflate";
 import { readExif } from "./exif";
 import { createOrientedCanvas, renderEdit } from "./renderPipeline";
 import { toEditSettings } from "./settings";
@@ -104,15 +105,39 @@ function triggerDownload(blob: Blob, fileName: string): void {
 }
 
 // Decodes the full-resolution image only for the duration of the export.
-export async function exportPhoto(entry: PhotoEntry, shared: SharedSettings): Promise<void> {
+async function renderPhotoBlob(entry: PhotoEntry, shared: SharedSettings): Promise<Blob> {
   await document.fonts.ready;
   const bitmap = await decodeImage(entry.file);
   try {
     const settings = toEditSettings(entry.edit, shared);
     const oriented = createOrientedCanvas(bitmap, settings.orientation, Infinity);
-    const blob = await canvasToBlob(flatten(renderEdit(oriented, settings, entry.exif, entry.captionOverrides)));
-    triggerDownload(blob, `${entry.fileName}-edited.jpg`);
+    return await canvasToBlob(flatten(renderEdit(oriented, settings, entry.exif, entry.captionOverrides)));
   } finally {
     bitmap.close();
   }
+}
+
+export async function exportPhoto(entry: PhotoEntry, shared: SharedSettings): Promise<void> {
+  const blob = await renderPhotoBlob(entry, shared);
+  triggerDownload(blob, `${entry.fileName}-edited.jpg`);
+}
+
+export async function exportPhotosAsZip(
+  entries: PhotoEntry[],
+  shared: SharedSettings,
+  onProgress: (done: number) => void,
+): Promise<void> {
+  const files: Record<string, Uint8Array> = {};
+  const nameCounts = new Map<string, number>();
+  for (const [index, entry] of entries.entries()) {
+    const blob = await renderPhotoBlob(entry, shared);
+    const baseName = `${entry.fileName}-edited`;
+    const count = (nameCounts.get(baseName) ?? 0) + 1;
+    nameCounts.set(baseName, count);
+    const fileName = `${baseName}${count > 1 ? `-${count}` : ""}.jpg`;
+    files[fileName] = new Uint8Array(await blob.arrayBuffer());
+    onProgress(index + 1);
+  }
+  const archive = zipSync(files, { level: 0 });
+  triggerDownload(new Blob([archive], { type: "application/zip" }), "edited-photos.zip");
 }
