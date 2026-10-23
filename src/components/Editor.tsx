@@ -5,6 +5,7 @@ import { Alert, Button, ButtonGroup, Spinner, Tab, Tabs } from "@heroui/react";
 import { useDecodedPhoto } from "@/hooks/useDecodedPhoto";
 import { useEditorState } from "@/hooks/useEditorState";
 import { PREVIEW_MAX_EDGE } from "@/lib/constants";
+import { getCaptionTexts, hasMissingCaptionFields } from "@/lib/caption";
 import { adjustCropForStraighten, resolveLockedAspect } from "@/lib/cropMath";
 import { exportPhoto } from "@/lib/photoIO";
 import { createOrientedCanvas } from "@/lib/renderPipeline";
@@ -135,9 +136,17 @@ export function Editor() {
         return (
           <InfoPanel
             exif={entry.exif}
+            captionOverrides={entry.captionOverrides}
             caption={shared.caption}
             credit={shared.credit}
+            hasPhotosWithoutProfile={photos.some(
+              (photo) =>
+                photo.id !== entry.id &&
+                hasMissingCaptionFields(photo.exif, getCaptionTexts(entry.exif, entry.captionOverrides)),
+            )}
             onCaptionChange={editor.setCaption}
+            onCaptionOverrideChange={editor.setCaptionOverride}
+            onApplyProfile={(profile) => editor.applyCaptionOverridesToPhotosWithoutExif(profile)}
             onCreditChange={editor.setCredit}
           />
         );
@@ -154,7 +163,14 @@ export function Editor() {
       const aspect = resolveLockedAspect(activeEntry.edit.aspectId, oriented.width, oriented.height);
       return <CropTool source={oriented} crop={cropPreview ?? activeEntry.edit.crop} aspect={aspect} onChange={editor.setCrop} />;
     }
-    return <Preview source={oriented} settings={settings} exif={activeEntry.exif} />;
+    return (
+      <Preview
+        source={oriented}
+        settings={settings}
+        exif={activeEntry.exif}
+        captionOverrides={activeEntry.captionOverrides}
+      />
+    );
   }
 
   const isExporting = exportProgress !== null;
@@ -176,7 +192,7 @@ export function Editor() {
           </ButtonGroup>
         </div>
         <div className="editor-upload">
-          <PhotoUpload currentCount={photos.length} onAdd={editor.addPhotos} />
+          <PhotoUpload onAdd={editor.addPhotos} />
         </div>
         {activeEntry && (
           <Tabs

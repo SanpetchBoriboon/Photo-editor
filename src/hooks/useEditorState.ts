@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { DEFAULT_EDIT, DEFAULT_SHARED, FREE_ASPECT_ID, FULL_CROP, DEFAULT_ORIENTATION } from "@/lib/constants";
+import { CAPTION_FIELDS, getExifTexts, hasMissingCaptionFields } from "@/lib/caption";
 import { adjustCropForStraighten, fitCropToAspect, resolveLockedAspect } from "@/lib/cropMath";
 import type {
   Adjustments,
   BorderSettings,
+  CaptionField,
+  CaptionOverrides,
   CaptionSelection,
   CreditSettings,
   CropRect,
@@ -86,6 +89,28 @@ export function useEditorState() {
     setAdjustments: (adjustments: Adjustments) => updateActiveEdit(() => ({ adjustments })),
     setBorder: (border: BorderSettings) => setShared((previous) => ({ ...previous, border })),
     setCaption: (caption: CaptionSelection) => setShared((previous) => ({ ...previous, caption })),
+    setCaptionOverride: (field: CaptionField, value: string) =>
+      setPhotos((previous) =>
+        previous.map((photo) =>
+          photo.id === activeId
+            ? { ...photo, captionOverrides: { ...photo.captionOverrides, [field]: value } }
+            : photo,
+        ),
+      ),
+      applyCaptionOverridesToPhotosWithoutExif: (overrides: CaptionOverrides) =>
+        setPhotos((previous) =>
+          previous.map((photo) => {
+            if (photo.id === activeId || !hasMissingCaptionFields(photo.exif, overrides)) return photo;
+            const exifTexts = getExifTexts(photo.exif);
+            const captionOverrides = { ...photo.captionOverrides };
+            for (const field of CAPTION_FIELDS) {
+              if (!exifTexts[field].trim() && overrides[field]?.trim()) {
+                captionOverrides[field] = overrides[field];
+              }
+            }
+            return { ...photo, captionOverrides };
+          }),
+        ),
     setCredit: (credit: CreditSettings) => setShared((previous) => ({ ...previous, credit })),
   };
 }

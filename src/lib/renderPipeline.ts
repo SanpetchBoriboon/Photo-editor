@@ -1,6 +1,6 @@
 import { applyAdjustments } from "./adjustments";
 import { addBorder } from "./borderRenderer";
-import type { CropRect, EditSettings, ExifData, Orientation } from "./types";
+import type { CaptionOverrides, CropRect, EditSettings, ExifData, Orientation } from "./types";
 
 const DEGREES_TO_RADIANS = Math.PI / 180;
 const QUARTER_TURN_ROTATIONS = [90, 270];
@@ -43,12 +43,18 @@ function cropCanvas(source: HTMLCanvasElement, crop: CropRect): HTMLCanvasElemen
 }
 
 // Pipeline: crop -> color adjustments -> border and captions.
-export function renderEdit(oriented: HTMLCanvasElement, settings: EditSettings, exif: ExifData): HTMLCanvasElement {
+export function renderEdit(
+  oriented: HTMLCanvasElement,
+  settings: EditSettings,
+  exif: ExifData,
+  captionOverrides: CaptionOverrides,
+): HTMLCanvasElement {
   const cropped = cropCanvas(oriented, settings.crop);
   applyAdjustments(cropped, settings.adjustments);
   return addBorder(cropped, {
     border: settings.border,
     caption: settings.caption,
+    captionOverrides,
     credit: settings.credit,
     exif,
   });

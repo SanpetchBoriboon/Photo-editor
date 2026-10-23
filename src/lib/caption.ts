@@ -1,4 +1,6 @@
-import type { CaptionField, CaptionSelection, ExifData } from "./types";
+import type { CaptionField, CaptionOverrides, CaptionSelection, ExifData } from "./types";
+
+export const CAPTION_FIELDS: readonly CaptionField[] = ["make", "model", "lens", "aperture", "shutter"];
 
 export const DETAILS_SEPARATOR = "   ";
 const APERTURE_DECIMALS = 1;
@@ -29,6 +31,22 @@ export function getExifTexts(exif: ExifData): Record<CaptionField, string> {
   };
 }
 
+export function hasMissingCaptionFields(exif: ExifData, profile: CaptionOverrides): boolean {
+  const exifTexts = getExifTexts(exif);
+  return CAPTION_FIELDS.some((field) => !exifTexts[field].trim() && Boolean(profile[field]?.trim()));
+}
+
+export function getCaptionTexts(exif: ExifData, overrides: CaptionOverrides): Record<CaptionField, string> {
+  const texts = getExifTexts(exif);
+  return {
+    make: overrides.make?.trim() || texts.make,
+    model: overrides.model?.trim() || texts.model,
+    lens: overrides.lens?.trim() || texts.lens,
+    aperture: overrides.aperture?.trim() || texts.aperture,
+    shutter: overrides.shutter?.trim() || texts.shutter,
+  };
+}
+
 export interface CaptionLines {
   brand: string;
   model: string;
@@ -40,8 +58,12 @@ function joinNonEmpty(parts: string[], separator: string): string {
 }
 
 // Title is the camera name; details are the exposure values shown smaller below it.
-export function buildCaptionLines(exif: ExifData, selection: CaptionSelection): CaptionLines {
-  const texts = getExifTexts(exif);
+export function buildCaptionLines(
+  exif: ExifData,
+  selection: CaptionSelection,
+  overrides: CaptionOverrides,
+): CaptionLines {
+  const texts = getCaptionTexts(exif, overrides);
   const make = selection.make ? texts.make : "";
   let model = selection.model ? texts.model : "";
   if (make && model.toLowerCase().startsWith(make.toLowerCase())) {

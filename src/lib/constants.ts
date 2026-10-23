@@ -13,7 +13,6 @@ import type {
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 export const MAX_IMAGE_PIXELS = 100_000_000;
-export const MAX_PHOTOS = 20;
 export const EXIF_READ_BYTES = 128 * 1024;
 export const THUMBNAIL_WIDTH = 160;
 export const THUMBNAIL_QUALITY = 0.7;

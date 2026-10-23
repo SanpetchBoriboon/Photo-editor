@@ -43,6 +43,8 @@ export interface BorderSettings {
 
 export type CaptionField = "make" | "model" | "lens" | "aperture" | "shutter";
 
+export type CaptionOverrides = Partial<Record<CaptionField, string>>;
+
 export type CaptionSelection = Record<CaptionField, boolean>;
 
 export type CreditMode = "off" | "text" | "image";
@@ -75,6 +77,7 @@ export interface PhotoEntry {
   file: File;
   fileName: string;
   exif: ExifData;
+  captionOverrides: CaptionOverrides;
   thumbnailUrl: string;
   edit: PhotoEdit;
 }

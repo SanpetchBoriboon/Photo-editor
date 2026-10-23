@@ -1,7 +1,7 @@
 import { buildCaptionLines } from "./caption";
 import type { CaptionLines } from "./caption";
 import { findBrandLogo } from "./brandLogos";
-import type { BorderSettings, CaptionSelection, CreditSettings, ExifData } from "./types";
+import type { BorderSettings, CaptionOverrides, CaptionSelection, CreditSettings, ExifData } from "./types";
 
 const FALLBACK_FONT_FAMILY = "sans-serif";
 const CREDIT_FONT_RATIO = 0.28; // of border size
@@ -187,13 +187,14 @@ function drawLeftCaption(target: CaptionContext, captionLines: CaptionLines): vo
 export interface BorderInput {
   border: BorderSettings;
   caption: CaptionSelection;
+  captionOverrides: CaptionOverrides;
   credit: CreditSettings;
   exif: ExifData;
 }
 
 // Adds a border of `percent` of the shorter side, with captions in the bottom edge.
 export function addBorder(source: HTMLCanvasElement, input: BorderInput): HTMLCanvasElement {
-  const { border: settings, caption, credit, exif } = input;
+  const { border: settings, caption, captionOverrides, credit, exif } = input;
   const border = Math.round((Math.min(source.width, source.height) * settings.percent) / 100);
   if (!settings.enabled || border <= 0) return source;
   const bottomBorder = Math.round(border * BOTTOM_BORDER_RATIO);
@@ -212,7 +213,7 @@ export function addBorder(source: HTMLCanvasElement, input: BorderInput): HTMLCa
   context.fillStyle = isLightColor(color) ? DARK_TEXT_COLOR : LIGHT_TEXT_COLOR;
   context.textBaseline = "middle";
   const target: CaptionContext = { context, border, bottomBorder, width: output.width, height: output.height };
-  drawLeftCaption(target, buildCaptionLines(exif, caption));
+  drawLeftCaption(target, buildCaptionLines(exif, caption, captionOverrides));
   drawCredit(target, credit);
   return output;
 }

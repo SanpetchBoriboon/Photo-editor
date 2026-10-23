@@ -63,6 +63,7 @@ export async function createPhotoEntry(file: File): Promise<PhotoEntry> {
     file,
     fileName: sanitizeFileName(file.name),
     exif: readExif(head),
+    captionOverrides: {},
     thumbnailUrl,
     edit: DEFAULT_EDIT,
   };
@@ -109,7 +110,7 @@ export async function exportPhoto(entry: PhotoEntry, shared: SharedSettings): Pr
   try {
     const settings = toEditSettings(entry.edit, shared);
     const oriented = createOrientedCanvas(bitmap, settings.orientation, Infinity);
-    const blob = await canvasToBlob(flatten(renderEdit(oriented, settings, entry.exif)));
+    const blob = await canvasToBlob(flatten(renderEdit(oriented, settings, entry.exif, entry.captionOverrides)));
     triggerDownload(blob, `${entry.fileName}-edited.jpg`);
   } finally {
     bitmap.close();

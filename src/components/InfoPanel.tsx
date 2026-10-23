@@ -1,27 +1,48 @@
 "use client";
 
 import { useState } from "react";
-import { Alert, Checkbox, Input, Radio, RadioGroup } from "@heroui/react";
+import { Alert, Button, Checkbox, Input, Radio, RadioGroup } from "@heroui/react";
 import { CREDIT_TEXT_MAX_LENGTH } from "@/lib/constants";
-import { getExifTexts } from "@/lib/caption";
+import { CAPTION_FIELDS, getCaptionTexts, getExifTexts } from "@/lib/caption";
 import { decodeImage, validateImageFile } from "@/lib/photoIO";
-import type { CaptionField, CaptionSelection, CreditMode, CreditSettings, ExifData } from "@/lib/types";
+import type {
+  CaptionField,
+  CaptionOverrides,
+  CaptionSelection,
+  CreditMode,
+  CreditSettings,
+  ExifData,
+} from "@/lib/types";
 import { useLanguage } from "./Providers";
 import { UploadButton } from "./UploadButton";
 
-const CAPTION_FIELDS: readonly CaptionField[] = ["make", "model", "lens", "aperture", "shutter"];
 interface InfoPanelProps {
   exif: ExifData;
+  captionOverrides: CaptionOverrides;
   caption: CaptionSelection;
   credit: CreditSettings;
+  hasPhotosWithoutProfile: boolean;
   onCaptionChange: (caption: CaptionSelection) => void;
+  onCaptionOverrideChange: (field: CaptionField, value: string) => void;
+  onApplyProfile: (profile: CaptionOverrides) => void;
   onCreditChange: (credit: CreditSettings) => void;
 }
 
-export function InfoPanel({ exif, caption, credit, onCaptionChange, onCreditChange }: InfoPanelProps) {
+export function InfoPanel({
+  exif,
+  captionOverrides,
+  caption,
+  credit,
+  hasPhotosWithoutProfile,
+  onCaptionChange,
+  onCaptionOverrideChange,
+  onApplyProfile,
+  onCreditChange,
+}: InfoPanelProps) {
   const { t } = useLanguage();
   const [error, setError] = useState("");
-  const texts = getExifTexts(exif);
+  const exifTexts = getExifTexts(exif);
+  const texts = getCaptionTexts(exif, captionOverrides);
   const fieldLabels: Record<CaptionField, string> = {
     make: t("make"),
     model: t("model"),
@@ -60,17 +81,38 @@ export function InfoPanel({ exif, caption, credit, onCaptionChange, onCreditChan
       <h2 className="text-sm text-default-500">{t("cameraInfoForPhoto")}</h2>
       <div className="flex flex-col gap-2">
         {CAPTION_FIELDS.map((field) => (
-          <Checkbox
-            key={field}
-            isDisabled={!texts[field]}
-            isSelected={caption[field]}
-            onValueChange={(checked) => onCaptionChange({ ...caption, [field]: checked })}
-          >
-            {fieldLabels[field]}
-            <span className="ml-2 text-xs text-default-500">{texts[field] || t("noExif")}</span>
-          </Checkbox>
+          <div key={field} className="flex flex-col gap-2">
+            <Checkbox
+              isDisabled={!texts[field]}
+              isSelected={caption[field]}
+              onValueChange={(checked) => onCaptionChange({ ...caption, [field]: checked })}
+            >
+              {fieldLabels[field]}
+              <span className="ml-2 text-xs text-default-500">{texts[field] || t("noExif")}</span>
+            </Checkbox>
+            {!exifTexts[field] && (
+              <Input
+                size="sm"
+                label={fieldLabels[field]}
+                placeholder={t("enterManually")}
+                maxLength={80}
+                value={captionOverrides[field] ?? ""}
+                onValueChange={(value) => onCaptionOverrideChange(field, value)}
+              />
+            )}
+          </div>
         ))}
       </div>
+      <Button
+        size="sm"
+        variant="flat"
+        isDisabled={
+          !hasPhotosWithoutProfile || !CAPTION_FIELDS.some((field) => texts[field].trim())
+        }
+        onPress={() => onApplyProfile(texts)}
+      >
+        {t("applyProfileToPhotosWithoutExif")}
+      </Button>
       <h2 className="text-sm text-default-500">{t("creditForAll")}</h2>
       <RadioGroup orientation="horizontal" aria-label={t("creditMode")} value={credit.mode} onValueChange={handleModeChange}>
         {creditModes.map((mode) => (
