@@ -72,7 +72,8 @@ export const DEFAULT_SHARED: SharedSettings = {
   credit: { mode: "off", text: "", image: null },
 };
 
-export const ADJUSTMENT_RANGE = { min: -100, max: 100 } as const;
+export const ADJUSTMENT_RANGE = { min: -100, max: 100, step: 0.1 } as const;
+export const EXPOSURE_RANGE = { min: -5, max: 5, step: 0.01 } as const;
 
 export const ADJUSTMENT_CONTROLS: readonly { key: AdjustmentKey; label: string }[] = [
   { key: "exposure", label: "แสง (Exposure)" },

@@ -184,7 +184,7 @@ export function Editor() {
           <AdjustPanel
             adjustments={entry.edit.adjustments}
             onChange={editor.setAdjustments}
-            onInteractionStart={() => setIsAdjusting(true)}
+            onInteractionStart={(key) => setIsAdjusting(key !== "exposure")}
             onInteractionEnd={() => setIsAdjusting(false)}
           />
         );

@@ -8,11 +8,12 @@ interface SliderProps {
   min: number;
   max: number;
   step?: number;
+  formatOptions?: Intl.NumberFormatOptions;
   onChange: (value: number) => void;
   onChangeEnd?: () => void;
 }
 
-export function Slider({ label, value, min, max, step = 1, onChange, onChangeEnd }: SliderProps) {
+export function Slider({ label, value, min, max, step = 1, formatOptions, onChange, onChangeEnd }: SliderProps) {
   return (
     <HeroSlider
       size="sm"
@@ -20,6 +21,7 @@ export function Slider({ label, value, min, max, step = 1, onChange, onChangeEnd
       minValue={min}
       maxValue={max}
       step={step}
+      formatOptions={formatOptions}
       value={value}
       onChange={(next) => {
         if (typeof next === "number") onChange(next);
