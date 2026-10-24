@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, Button, ButtonGroup, Spinner, Tab, Tabs } from "@heroui/react";
 import { useDecodedPhoto } from "@/hooks/useDecodedPhoto";
 import { useEditorState } from "@/hooks/useEditorState";
-import { PREVIEW_MAX_EDGE } from "@/lib/constants";
+import { INTERACTIVE_PREVIEW_MAX_EDGE, PREVIEW_MAX_EDGE } from "@/lib/constants";
 import { getCaptionTexts, hasMissingCaptionFields } from "@/lib/caption";
 import { adjustCropForStraighten, resolveLockedAspect } from "@/lib/cropMath";
 import { exportPhoto, exportPhotosAsZip } from "@/lib/photoIO";
@@ -44,6 +44,7 @@ export function Editor() {
   const editor = useEditorState();
   const { photos, activeEntry, shared, selectPhoto: setActivePhoto } = editor;
   const [tab, setTab] = useState<TabId>("adjust");
+  const [isAdjusting, setIsAdjusting] = useState(false);
   const [straightenDraft, setStraightenDraft] = useState<number | null>(null);
   const [exportError, setExportError] = useState("");
   const [exportProgress, setExportProgress] = useState<{ done: number; total: number } | null>(null);
@@ -60,8 +61,15 @@ export function Editor() {
   );
 
   const oriented = useMemo(
-    () => (decoded.bitmap && previewOrientation ? createOrientedCanvas(decoded.bitmap, previewOrientation, PREVIEW_MAX_EDGE) : null),
-    [decoded.bitmap, previewOrientation],
+    () =>
+      decoded.bitmap && previewOrientation
+        ? createOrientedCanvas(
+            decoded.bitmap,
+            previewOrientation,
+            isAdjusting ? INTERACTIVE_PREVIEW_MAX_EDGE : PREVIEW_MAX_EDGE,
+          )
+        : null,
+    [decoded.bitmap, previewOrientation, isAdjusting],
   );
   const settings = useMemo(() => (edit ? toEditSettings(edit, shared) : null), [edit, shared]);
   const cropPreview = useMemo(() => {
@@ -172,7 +180,14 @@ export function Editor() {
           />
         );
       case "adjust":
-        return <AdjustPanel adjustments={entry.edit.adjustments} onChange={editor.setAdjustments} />;
+        return (
+          <AdjustPanel
+            adjustments={entry.edit.adjustments}
+            onChange={editor.setAdjustments}
+            onInteractionStart={() => setIsAdjusting(true)}
+            onInteractionEnd={() => setIsAdjusting(false)}
+          />
+        );
       case "border":
         return <BorderPanel border={shared.border} onChange={editor.setBorder} />;
       case "info":
@@ -246,6 +261,7 @@ export function Editor() {
             selectedKey={tab}
             onSelectionChange={(key) => {
               if (key === "crop" || key === "adjust" || key === "border" || key === "info") {
+                setIsAdjusting(false);
                 if (key !== "crop") setStraightenDraft(null);
                 setTab(key);
               }

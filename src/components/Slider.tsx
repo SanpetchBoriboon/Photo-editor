@@ -9,9 +9,10 @@ interface SliderProps {
   max: number;
   step?: number;
   onChange: (value: number) => void;
+  onChangeEnd?: () => void;
 }
 
-export function Slider({ label, value, min, max, step = 1, onChange }: SliderProps) {
+export function Slider({ label, value, min, max, step = 1, onChange, onChangeEnd }: SliderProps) {
   return (
     <HeroSlider
       size="sm"
@@ -23,6 +24,7 @@ export function Slider({ label, value, min, max, step = 1, onChange }: SliderPro
       onChange={(next) => {
         if (typeof next === "number") onChange(next);
       }}
+      onChangeEnd={onChangeEnd}
     />
   );
 }

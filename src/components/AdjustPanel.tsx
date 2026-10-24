@@ -21,9 +21,11 @@ const ADJUSTMENT_LABELS: Record<AdjustmentKey, MessageKey> = {
 interface AdjustPanelProps {
   adjustments: Adjustments;
   onChange: (adjustments: Adjustments) => void;
+  onInteractionStart: () => void;
+  onInteractionEnd: () => void;
 }
 
-export function AdjustPanel({ adjustments, onChange }: AdjustPanelProps) {
+export function AdjustPanel({ adjustments, onChange, onInteractionStart, onInteractionEnd }: AdjustPanelProps) {
   const { t } = useLanguage();
   function update(key: AdjustmentKey, value: number): void {
     onChange({ ...adjustments, [key]: value });
@@ -39,7 +41,11 @@ export function AdjustPanel({ adjustments, onChange }: AdjustPanelProps) {
           value={adjustments[key]}
           min={ADJUSTMENT_RANGE.min}
           max={ADJUSTMENT_RANGE.max}
-          onChange={(value) => update(key, value)}
+          onChange={(value) => {
+            onInteractionStart();
+            update(key, value);
+          }}
+          onChangeEnd={onInteractionEnd}
         />
       ))}
       <Button size="sm" variant="light" className="self-start" onPress={() => onChange(DEFAULT_ADJUSTMENTS)}>
