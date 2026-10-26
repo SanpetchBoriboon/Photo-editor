@@ -33,7 +33,19 @@ export const STRAIGHTEN_DISPLAY_DECIMALS = 1;
 
 export const BORDER_PERCENT_MIN = 1;
 export const BORDER_PERCENT_MAX = 30;
-export const DEFAULT_BORDER: BorderSettings = { enabled: true, percent: 10, color: "#ffffff" };
+export const DEFAULT_BORDER: BorderSettings = { enabled: true, percent: 10, color: "#ffffff", canvasAspect: null };
+export const CANVAS_ASPECT_PRESETS = [
+  { ratio: 1, label: "1:1" },
+  { ratio: 4 / 5, label: "4:5" },
+  { ratio: 5 / 4, label: "5:4" },
+  { ratio: 3 / 2, label: "3:2" },
+  { ratio: 2 / 3, label: "2:3" },
+  { ratio: 16 / 9, label: "16:9" },
+  { ratio: 9 / 16, label: "9:16" },
+  { ratio: 1.91, label: "1.91:1" },
+  { ratio: 2.63, label: "2.63:1" },
+  { ratio: 3, label: "3:1" },
+] as const;
 
 export const FULL_CROP: CropRect = { x: 0, y: 0, width: 1, height: 1 };
 export const DEFAULT_ORIENTATION: Orientation = { rotation: 0, straighten: 0, flipHorizontal: false };
@@ -96,6 +108,18 @@ export const ASPECT_PRESETS: readonly AspectPreset[] = [
   { id: "2:3", label: "2:3", ratio: 2 / 3 },
   { id: "16:9", label: "16:9", ratio: 16 / 9 },
   { id: "9:16", label: "9:16", ratio: 9 / 16 },
+  { id: "instagram-feed", label: "Instagram Feed · 4:5", ratio: 4 / 5, category: "social" },
+  { id: "instagram-square", label: "Instagram Square · 1:1", ratio: 1, category: "social" },
+  { id: "instagram-story", label: "Instagram Story / Reel · 9:16", ratio: 9 / 16, category: "social" },
+  { id: "facebook-feed", label: "Facebook Feed · 1.91:1", ratio: 1.91, category: "social" },
+  { id: "facebook-story", label: "Facebook Story · 9:16", ratio: 9 / 16, category: "social" },
+  { id: "facebook-cover", label: "Facebook Cover · 2.63:1", ratio: 2.63, category: "social" },
+  { id: "tiktok-video", label: "TikTok Video · 9:16", ratio: 9 / 16, category: "social" },
+  { id: "youtube-thumbnail", label: "YouTube Thumbnail · 16:9", ratio: 16 / 9, category: "social" },
+  { id: "youtube-shorts", label: "YouTube Shorts · 9:16", ratio: 9 / 16, category: "social" },
+  { id: "x-post", label: "X Post · 16:9", ratio: 16 / 9, category: "social" },
+  { id: "x-header", label: "X Header · 3:1", ratio: 3, category: "social" },
+  { id: "linkedin-post", label: "LinkedIn Post · 1.91:1", ratio: 1.91, category: "social" },
 ];
 
 export const CAPTION_FIELD_LABELS: Record<CaptionField, string> = {

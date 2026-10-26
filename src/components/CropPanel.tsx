@@ -61,7 +61,7 @@ export function CropPanel({
     <div className="flex flex-col gap-4">
       <h2 className="text-sm text-default-500">{t("aspectRatio")}</h2>
       <div className="flex flex-wrap gap-2">
-        {ASPECT_PRESETS.map((preset) => (
+        {ASPECT_PRESETS.filter((preset) => preset.category !== "social").map((preset) => (
           <Button
             key={preset.id}
             size="sm"
@@ -71,6 +71,21 @@ export function CropPanel({
             onPress={() => onSelectAspect(preset.id)}
           >
             {aspectLabel(preset.id, preset.label, preset.ratio)}
+          </Button>
+        ))}
+      </div>
+      <h3 className="text-sm text-default-500">{t("socialMediaRatios")}</h3>
+      <div className="flex flex-wrap gap-2">
+        {ASPECT_PRESETS.filter((preset) => preset.category === "social").map((preset) => (
+          <Button
+            key={preset.id}
+            size="sm"
+            radius="full"
+            color={preset.id === aspectId ? "primary" : "default"}
+            variant={preset.id === aspectId ? "solid" : "flat"}
+            onPress={() => onSelectAspect(preset.id)}
+          >
+            {preset.label}
           </Button>
         ))}
       </div>

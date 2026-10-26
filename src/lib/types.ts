@@ -39,6 +39,7 @@ export interface BorderSettings {
   enabled: boolean;
   percent: number;
   color: string;
+  canvasAspect: number | null;
 }
 
 export type CaptionField = "make" | "model" | "lens" | "aperture" | "shutter";
@@ -87,6 +88,7 @@ export interface AspectPreset {
   label: string;
   // null = free, "original" = keep image aspect, number = width / height
   ratio: number | "original" | null;
+  category?: "social";
 }
 
 export type CropHandle = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";

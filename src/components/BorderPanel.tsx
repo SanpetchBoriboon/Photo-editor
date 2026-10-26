@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Switch } from "@heroui/react";
-import { BORDER_PERCENT_MAX, BORDER_PERCENT_MIN, DEFAULT_BORDER } from "@/lib/constants";
+import { BORDER_PERCENT_MAX, BORDER_PERCENT_MIN, CANVAS_ASPECT_PRESETS, DEFAULT_BORDER } from "@/lib/constants";
 import type { BorderSettings } from "@/lib/types";
 import { useLanguage } from "./Providers";
 import { Slider } from "./Slider";
@@ -30,6 +30,26 @@ export function BorderPanel({ border, onChange }: BorderPanelProps) {
         max={BORDER_PERCENT_MAX}
         onChange={(percent) => onChange({ ...border, percent })}
       />
+      <label className="flex flex-col gap-2 text-sm">
+        {t("canvasAspectRatio")}
+        <select
+          className="h-9 rounded-medium border border-default-200 bg-content1 px-3"
+          value={border.canvasAspect === null ? "photo" : String(border.canvasAspect)}
+          onChange={(event) =>
+            onChange({
+              ...border,
+              canvasAspect: event.target.value === "photo" ? null : Number(event.target.value),
+            })
+          }
+        >
+          <option value="photo">{t("matchPhoto")}</option>
+          {CANVAS_ASPECT_PRESETS.map((preset) => (
+            <option key={preset.label} value={String(preset.ratio)}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="flex items-center gap-2">
         <label htmlFor="border-color" className="text-sm">
           {t("borderColor")}

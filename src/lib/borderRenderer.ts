@@ -14,6 +14,8 @@ const BRAND_LOGO_MAX_WIDTH_RATIO = 0.45;
 const ICON_VIEWBOX_SIZE = 24;
 const CREDIT_IMAGE_HEIGHT_RATIO = 0.5; // of border size
 const BOTTOM_BORDER_RATIO = 1.2;
+const CAPTION_SCALE_MAX_RATIO = 1.5;
+const CAPTION_GAP_RATIO = 0.2;
 const LEFT_TEXT_WIDTH_RATIO = 0.6; // of the width between side borders
 const RIGHT_AREA_WIDTH_RATIO = 0.4;
 const DARK_TEXT_COLOR = "#222222";
@@ -29,9 +31,11 @@ const FALLBACK_BORDER_COLOR = "#ffffff";
 interface CaptionContext {
   context: CanvasRenderingContext2D;
   border: number;
-  bottomBorder: number;
+  captionScaleBorder: number;
+  leftBorder: number;
+  rightBorder: number;
+  captionStartY: number;
   width: number;
-  height: number;
 }
 
 function safeColor(color: string): string {
@@ -50,20 +54,31 @@ function isLightColor(hexColor: string): boolean {
 }
 
 function drawCreditImage(target: CaptionContext, image: ImageBitmap): void {
-  const { context, border, bottomBorder, width, height } = target;
-  const maxHeight = bottomBorder * CREDIT_IMAGE_HEIGHT_RATIO;
-  const maxWidth = (width - 2 * border) * RIGHT_AREA_WIDTH_RATIO;
+  const { context, captionScaleBorder, rightBorder, width } = target;
+  const maxHeight = captionScaleBorder * CREDIT_IMAGE_HEIGHT_RATIO;
+  const maxWidth = (width - target.leftBorder - rightBorder) * RIGHT_AREA_WIDTH_RATIO;
   const scale = Math.min(maxHeight / image.height, maxWidth / image.width);
   const drawWidth = image.width * scale;
   const drawHeight = image.height * scale;
-  context.drawImage(image, width - border - drawWidth, height - bottomBorder / 2 - drawHeight / 2, drawWidth, drawHeight);
+  context.drawImage(
+    image,
+    width - rightBorder - drawWidth,
+    target.captionStartY + target.captionScaleBorder * TITLE_FONT_RATIO / 2 - drawHeight / 2,
+    drawWidth,
+    drawHeight,
+  );
 }
 
 function drawCreditText(target: CaptionContext, text: string): void {
-  const { context, border, bottomBorder, width, height } = target;
-  context.font = `${Math.round(border * CREDIT_FONT_RATIO)}px ${getFontFamily()}`;
+  const { context, captionScaleBorder, rightBorder, width } = target;
+  context.font = `${Math.round(captionScaleBorder * CREDIT_FONT_RATIO)}px ${getFontFamily()}`;
   context.textAlign = "right";
-  context.fillText(text, width - border, height - bottomBorder / 2, (width - 2 * border) * RIGHT_AREA_WIDTH_RATIO);
+  context.fillText(
+    text,
+    width - rightBorder,
+    target.captionStartY + target.captionScaleBorder * TITLE_FONT_RATIO / 2,
+    (width - target.leftBorder - rightBorder) * RIGHT_AREA_WIDTH_RATIO,
+  );
 }
 
 function drawCredit(target: CaptionContext, credit: CreditSettings): void {
@@ -123,50 +138,58 @@ function getIconBounds(path: string): IconBounds | null {
 function drawBrandLogo(target: CaptionContext, brand: string, centerY: number, visibleHeight: number): number {
   const logo = findBrandLogo(brand);
   if (!logo) return 0;
-  const { context, border } = target;
+  const { context, captionScaleBorder } = target;
   const bounds = getIconBounds(logo.path);
   if (!bounds) return 0;
-  const maxLogoWidth = (target.width - 2 * border) * LEFT_TEXT_WIDTH_RATIO * BRAND_LOGO_MAX_WIDTH_RATIO;
+  const maxLogoWidth =
+    (target.width - target.leftBorder - target.rightBorder) * LEFT_TEXT_WIDTH_RATIO * BRAND_LOGO_MAX_WIDTH_RATIO;
   const logoHeight = Math.min(visibleHeight, maxLogoWidth * (bounds.height / bounds.width));
   const scale = logoHeight / bounds.height;
   const logoWidth = bounds.width * scale;
   context.save();
-  context.translate(border, centerY - logoHeight / 2);
+  context.translate(target.leftBorder, centerY - logoHeight / 2);
   context.scale(scale, scale);
   context.translate(-bounds.x, -bounds.y);
   context.fillStyle = `#${logo.hex}`;
   context.fill(new Path2D(logo.path));
   context.restore();
-  return logoWidth + border * BRAND_LOGO_GAP_RATIO;
+  return logoWidth + captionScaleBorder * BRAND_LOGO_GAP_RATIO;
 }
 
 // Draws the title and details as one block, vertically centered in the bottom border.
 function drawLeftCaption(target: CaptionContext, captionLines: CaptionLines): void {
-  const { context, border, bottomBorder, width, height } = target;
+  const { context, captionScaleBorder, leftBorder, width } = target;
   const logo = findBrandLogo(captionLines.brand);
   const title = logo
     ? captionLines.model
     : [captionLines.brand, captionLines.model].filter(Boolean).join(" ");
   const lines: CaptionLine[] = [];
   if (captionLines.brand || captionLines.model) {
-    lines.push({ text: title, fontSize: border * TITLE_FONT_RATIO, weight: "bold", opacity: 1, isTitle: true });
+    lines.push({
+      text: title,
+      fontSize: captionScaleBorder * TITLE_FONT_RATIO,
+      weight: "bold",
+      opacity: 1,
+      isTitle: true,
+    });
   }
   if (captionLines.details) {
     lines.push({
       text: captionLines.details,
-      fontSize: border * DETAILS_FONT_RATIO,
+      fontSize: captionScaleBorder * DETAILS_FONT_RATIO,
       weight: "normal",
       opacity: DETAILS_OPACITY,
       isTitle: false,
     });
   }
-  const gap = border * LINE_GAP_RATIO;
-  const blockHeight = lines.reduce((sum, line) => sum + line.fontSize, 0) + gap * (lines.length - 1);
-  let lineTop = height - bottomBorder / 2 - blockHeight / 2;
+  const gap = captionScaleBorder * LINE_GAP_RATIO;
+  let lineTop = target.captionStartY;
   context.textAlign = "left";
   const titleLine = lines.find((line) => line.isTitle);
-  const titleCenterY = titleLine ? lineTop + titleLine.fontSize / 2 : height - bottomBorder / 2;
-  let logoHeight = titleLine?.fontSize ?? border * TITLE_FONT_RATIO;
+  const titleCenterY = titleLine
+    ? lineTop + titleLine.fontSize / 2
+    : lineTop + captionScaleBorder * TITLE_FONT_RATIO / 2;
+  let logoHeight = titleLine?.fontSize ?? captionScaleBorder * TITLE_FONT_RATIO;
   if (titleLine && captionLines.model) {
     context.font = `${titleLine.weight} ${Math.round(titleLine.fontSize)}px ${getFontFamily()}`;
     const modelBounds = context.measureText(captionLines.model);
@@ -176,8 +199,9 @@ function drawLeftCaption(target: CaptionContext, captionLines: CaptionLines): vo
   for (const line of lines) {
     context.font = `${line.weight} ${Math.round(line.fontSize)}px ${getFontFamily()}`;
     context.globalAlpha = line.opacity;
-    const x = border + (line.isTitle ? logoAdvance : 0);
-    const maxWidth = (width - 2 * border) * LEFT_TEXT_WIDTH_RATIO - (x - border);
+    const x = leftBorder + (line.isTitle ? logoAdvance : 0);
+    const maxWidth =
+      (width - target.leftBorder - target.rightBorder) * LEFT_TEXT_WIDTH_RATIO - (x - leftBorder);
     context.fillText(line.text, x, lineTop + line.fontSize / 2, maxWidth);
     lineTop += line.fontSize + gap;
   }
@@ -195,24 +219,55 @@ export interface BorderInput {
 // Adds a border of `percent` of the shorter side, with captions in the bottom edge.
 export function addBorder(source: HTMLCanvasElement, input: BorderInput): HTMLCanvasElement {
   const { border: settings, caption, captionOverrides, credit, exif } = input;
-  const border = Math.round((Math.min(source.width, source.height) * settings.percent) / 100);
+  const shorterSide = Math.min(source.width, source.height);
+  const border = Math.round((shorterSide * settings.percent) / 100);
   if (!settings.enabled || border <= 0) return source;
-  const bottomBorder = Math.round(border * BOTTOM_BORDER_RATIO);
+  const initialBottomBorder = Math.round(border * BOTTOM_BORDER_RATIO);
+  const minimumWidth = source.width + 2 * border;
+  const minimumHeight = source.height + border + initialBottomBorder;
+  const canvasAspect = settings.canvasAspect ?? source.width / source.height;
 
   const output = document.createElement("canvas");
-  output.width = source.width + 2 * border;
-  output.height = source.height + border + bottomBorder;
+  output.width = minimumWidth;
+  output.height = minimumHeight;
+  if (minimumWidth / minimumHeight < canvasAspect) {
+    output.width = Math.ceil(minimumHeight * canvasAspect);
+  } else if (minimumWidth / minimumHeight > canvasAspect) {
+    output.height = Math.ceil(minimumWidth / canvasAspect);
+  }
   const context = output.getContext("2d");
   if (!context) return source;
+  const extraWidth = output.width - minimumWidth;
+  const extraHeight = output.height - minimumHeight;
+  const leftBorder = border + Math.floor(extraWidth / 2);
+  const rightBorder = border + Math.ceil(extraWidth / 2);
+  const topBorder = border + Math.floor(extraHeight / 2);
+  const bottomBorder = initialBottomBorder + Math.ceil(extraHeight / 2);
+  const captionScaleBorder = Math.max(
+    border,
+    Math.min(
+      bottomBorder / BOTTOM_BORDER_RATIO,
+      border * CAPTION_SCALE_MAX_RATIO,
+      (output.width - leftBorder - rightBorder) * 0.12,
+    ),
+  );
 
   const color = safeColor(settings.color);
   context.fillStyle = color;
   context.fillRect(0, 0, output.width, output.height);
-  context.drawImage(source, border, border);
+  context.drawImage(source, leftBorder, topBorder);
 
   context.fillStyle = isLightColor(color) ? DARK_TEXT_COLOR : LIGHT_TEXT_COLOR;
   context.textBaseline = "middle";
-  const target: CaptionContext = { context, border, bottomBorder, width: output.width, height: output.height };
+  const target: CaptionContext = {
+    context,
+    border,
+    captionScaleBorder,
+    leftBorder,
+    rightBorder,
+    captionStartY: topBorder + source.height + border * CAPTION_GAP_RATIO,
+    width: output.width,
+  };
   drawLeftCaption(target, buildCaptionLines(exif, caption, captionOverrides));
   drawCredit(target, credit);
   return output;
