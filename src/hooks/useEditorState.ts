@@ -41,6 +41,11 @@ export function useEditorState() {
     setActiveId((current) => (current === id ? (neighbor?.id ?? null) : current));
   }
 
+  function clearPhotos(): void {
+    setPhotos([]);
+    setActiveId(null);
+  }
+
   function updateActiveEdit(change: (edit: PhotoEdit) => Partial<PhotoEdit>): void {
     setPhotos((previous) =>
       previous.map((photo) => (photo.id === activeId ? { ...photo, edit: { ...photo.edit, ...change(photo.edit) } } : photo)),
@@ -74,6 +79,7 @@ export function useEditorState() {
     shared,
     addPhotos,
     removePhoto,
+    clearPhotos,
     selectPhoto: setActiveId,
     rotate,
     flip,

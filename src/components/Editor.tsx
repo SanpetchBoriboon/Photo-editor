@@ -303,6 +303,19 @@ export function Editor() {
                 : `${t("downloadAll")} (${photos.length})`}
             </Button>
           )}
+          {photos.length > 0 && (
+            <Button
+              variant="light"
+              color="danger"
+              isDisabled={isExporting}
+              onPress={() => {
+                setStraightenDraft(null);
+                editor.clearPhotos();
+              }}
+            >
+              {t("resetPhotos")}
+            </Button>
+          )}
           {exportError && <Alert color="danger" title={exportError} />}
         </div>
       </aside>

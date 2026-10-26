@@ -79,6 +79,7 @@ export const messages = {
     previousPhoto: "รูปก่อนหน้า",
     nextPhoto: "รูปถัดไป",
     removePhoto: "ลบรูป",
+    resetPhotos: "รีเซ็ตรูปทั้งหมด",
   },
   en: {
     appTitle: "Stillframe",
@@ -158,6 +159,7 @@ export const messages = {
     previousPhoto: "Previous photo",
     nextPhoto: "Next photo",
     removePhoto: "Remove photo",
+    resetPhotos: "Reset all photos",
   },
 } as const;
 
