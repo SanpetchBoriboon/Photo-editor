@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Alert, Button, ButtonGroup, Spinner, Tab, Tabs } from "@heroui/react";
 import { useDecodedPhoto } from "@/hooks/useDecodedPhoto";
 import { useEditorState } from "@/hooks/useEditorState";
@@ -11,6 +13,7 @@ import { exportPhoto, exportPhotosAsZip } from "@/lib/photoIO";
 import { createOrientedCanvas } from "@/lib/renderPipeline";
 import { toEditSettings } from "@/lib/settings";
 import type { PhotoEntry } from "@/lib/types";
+import type { LayoutMode } from "@/lib/layout";
 import { useLanguage } from "./Providers";
 import { AdjustPanel } from "./AdjustPanel";
 import { BorderPanel } from "./BorderPanel";
@@ -27,6 +30,7 @@ import {
   PreviousPhotoIcon,
 } from "./icons";
 import { InfoPanel } from "./InfoPanel";
+import { LayoutEditor } from "./LayoutEditor";
 import { PhotoUpload } from "./PhotoUpload";
 import { Preview } from "./Preview";
 
@@ -39,10 +43,22 @@ const TAB_ITEMS = [
   { id: "info", labelKey: "info", icon: InfoIcon },
 ] as const;
 
+const WORKSPACE_LINKS = [
+  { href: "/edit", labelKey: "photoEditor" },
+  { href: "/layout/collage", labelKey: "collage" },
+  { href: "/layout/freeform", labelKey: "freeform" },
+  { href: "/layout/print", labelKey: "print" },
+  { href: "/layout/composition", labelKey: "composition" },
+] as const;
+
 export function Editor() {
   const { language, setLanguage, t } = useLanguage();
+  const pathname = usePathname();
   const editor = useEditorState();
   const { photos, activeEntry, shared, selectPhoto: setActivePhoto } = editor;
+  const workspace = pathname === "/" ? "home" : pathname.startsWith("/layout/") ? "layout" : "photo";
+  const routeMode = pathname.split("/")[2];
+  const layoutMode: LayoutMode = routeMode === "freeform" || routeMode === "print" || routeMode === "composition" ? routeMode : "collage";
   const [tab, setTab] = useState<TabId>("adjust");
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [straightenDraft, setStraightenDraft] = useState<number | null>(null);
@@ -102,6 +118,7 @@ export function Editor() {
   useEffect(() => {
     function handlePhotoNavigation(event: KeyboardEvent): void {
       if (
+        workspace !== "photo" ||
         (event.key !== "ArrowLeft" && event.key !== "ArrowRight") ||
         event.altKey ||
         event.ctrlKey ||
@@ -129,7 +146,7 @@ export function Editor() {
 
     window.addEventListener("keydown", handlePhotoNavigation);
     return () => window.removeEventListener("keydown", handlePhotoNavigation);
-  }, [photos, activeEntry?.id, setActivePhoto]);
+  }, [photos, activeEntry?.id, setActivePhoto, workspace]);
 
   function removePhoto(id: string): void {
     setStraightenDraft(null);
@@ -233,23 +250,40 @@ export function Editor() {
 
   const isExporting = exportProgress !== null;
   const activePhotoIndex = photos.findIndex((photo) => photo.id === activeEntry?.id);
-
-  return (
-    <main className="editor-layout">
-      <aside className="editor-sidebar">
-        <div className="editor-header">
-          <h1 className="text-xl font-semibold">
+  if (pathname !== "/" && !WORKSPACE_LINKS.some(({ href }) => href === pathname)) return null;
+  const header = (
+    <header className="workspace-header">
+      <div className="workspace-heading">
+        <h1 className="text-xl font-semibold">
+          <Link href="/" aria-label={t("home")}>
             <span className="text-default-500">Still</span>
             <span className="text-primary">frame</span>
-          </h1>
-          <ButtonGroup size="sm" variant="flat" aria-label={t("language")}>
-            {(["th", "en"] as const).map((option) => (
-              <Button key={option} color={language === option ? "primary" : "default"} onPress={() => setLanguage(option)}>
-                {option.toUpperCase()}
-              </Button>
-            ))}
-          </ButtonGroup>
-        </div>
+          </Link>
+        </h1>
+        <ButtonGroup size="sm" variant="flat" aria-label={t("language")}>
+          {(["th", "en"] as const).map((option) => (
+            <Button key={option} color={language === option ? "primary" : "default"} onPress={() => setLanguage(option)}>
+              {option.toUpperCase()}
+            </Button>
+          ))}
+        </ButtonGroup>
+      </div>
+      <nav className="workspace-nav" aria-label={t("workspaceMode")}>
+        {WORKSPACE_LINKS.map(({ href, labelKey }) => (
+          <Link key={href} href={href} scroll={false} aria-current={pathname === href ? "page" : undefined} onNavigate={() => setIsAdjusting(false)}>
+            {t(labelKey)}
+          </Link>
+        ))}
+      </nav>
+    </header>
+  );
+
+  return (
+    <div className="workspace-shell" hidden={workspace === "home"}>
+    {header}
+    <div className="workspace-content">
+    <main className="editor-layout" hidden={workspace !== "photo"}>
+      <aside className="editor-sidebar">
         <div className="editor-upload">
           <PhotoUpload onAdd={editor.addPhotos} />
         </div>
@@ -352,5 +386,14 @@ export function Editor() {
         )}
       </section>
     </main>
+    <LayoutEditor
+      photos={photos}
+      shared={shared}
+      mode={layoutMode}
+      upload={<PhotoUpload onAdd={editor.addPhotos} />}
+      hidden={workspace !== "layout"}
+    />
+    </div>
+    </div>
   );
 }
