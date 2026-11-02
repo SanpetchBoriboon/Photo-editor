@@ -46,6 +46,7 @@ export function AdjustPanel({ adjustments, onChange }: AdjustPanelProps) {
             step={isExposure ? EXPOSURE_RANGE.step : ADJUSTMENT_RANGE.step}
             formatOptions={isExposure ? EXPOSURE_FORMAT_OPTIONS : ADJUSTMENT_FORMAT_OPTIONS}
             onChange={(value) => update(key, value)}
+            onDoubleClick={() => update(key, DEFAULT_ADJUSTMENTS[key])}
           />
         );
       })}

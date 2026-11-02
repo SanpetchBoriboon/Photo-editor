@@ -11,9 +11,20 @@ interface SliderProps {
   formatOptions?: Intl.NumberFormatOptions;
   onChange: (value: number) => void;
   onChangeEnd?: () => void;
+  onDoubleClick?: () => void;
 }
 
-export function Slider({ label, value, min, max, step = 1, formatOptions, onChange, onChangeEnd }: SliderProps) {
+export function Slider({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  formatOptions,
+  onChange,
+  onChangeEnd,
+  onDoubleClick,
+}: SliderProps) {
   return (
     <HeroSlider
       size="sm"
@@ -23,6 +34,7 @@ export function Slider({ label, value, min, max, step = 1, formatOptions, onChan
       step={step}
       formatOptions={formatOptions}
       value={value}
+      onDoubleClick={onDoubleClick}
       onChange={(next) => {
         if (typeof next === "number") onChange(next);
       }}

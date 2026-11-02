@@ -23,6 +23,7 @@ interface CropToolProps {
   crop: CropRect;
   // Normalized width / height lock, or null for free cropping.
   aspect: number | null;
+  zoomScale: number | null;
   onChange: (crop: CropRect) => void;
   onConfirm: () => void;
 }
@@ -33,7 +34,7 @@ function handleStyle(handle: CropHandle, crop: CropRect) {
   return { left: `${(crop.x + horizontal) * PERCENT}%`, top: `${(crop.y + vertical) * PERCENT}%` };
 }
 
-export function CropTool({ source, crop, aspect, onChange, onConfirm }: CropToolProps) {
+export function CropTool({ source, crop, aspect, zoomScale, onChange, onConfirm }: CropToolProps) {
   const { t } = useLanguage();
   const [drag, setDrag] = useState<DragState | null>(null);
   const canvasRef = useCanvasMirror(source);
@@ -74,13 +75,19 @@ export function CropTool({ source, crop, aspect, onChange, onConfirm }: CropTool
   }
 
   const visibleHandles = aspect === null ? [...CORNER_HANDLES, ...EDGE_HANDLES] : CORNER_HANDLES;
+  const stageStyle =
+    zoomScale === null
+      ? undefined
+      : { width: `${source.width * zoomScale}px`, height: `${source.height * zoomScale}px` };
 
   return (
     <div
       className="crop-stage"
+      data-zoomed={zoomScale !== null}
       role="group"
       aria-label={t("cropPreview")}
       tabIndex={0}
+      style={stageStyle}
       onKeyDown={handleKeyDown}
       onPointerDownCapture={(event) => event.currentTarget.focus()}
     >

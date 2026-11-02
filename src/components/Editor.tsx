@@ -52,6 +52,7 @@ import { PhotoUpload } from "./PhotoUpload";
 import { Preview } from "./Preview";
 
 type TabId = "crop" | "adjust" | "border" | "info";
+type CanvasZoom = "fit" | "100%" | "200%";
 
 const TAB_ITEMS = [
   { id: "crop", labelKey: "crop", icon: CropIcon },
@@ -78,6 +79,7 @@ export function Editor() {
   const layoutMode: LayoutMode =
     routeMode === "freeform" || routeMode === "print" || routeMode === "composition" ? routeMode : "collage";
   const [tab, setTab] = useState<TabId>("adjust");
+  const [canvasZoom, setCanvasZoom] = useState<CanvasZoom>("fit");
   const [isPhotoLibraryOpen, setIsPhotoLibraryOpen] = useState(false);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [exportEntries, setExportEntries] = useState<PhotoEntry[] | null>(null);
@@ -118,6 +120,7 @@ export function Editor() {
         if (canvas) observer.observe(canvas);
       }
       if (!canvas) return;
+      if (canvasZoom !== "fit") return;
       const bounds = canvas.getBoundingClientRect();
       const longEdge = Math.max(bounds.width, bounds.height);
       setDisplayCanvasLongEdge((current) => (Math.abs(current - longEdge) < 0.5 ? current : longEdge));
@@ -146,7 +149,9 @@ export function Editor() {
       observer.disconnect();
       window.removeEventListener("resize", updateDevicePixelRatio);
     };
-  }, [activePhotoId, isPhotoLibraryOpen, tab, workspace]);
+  }, [activePhotoId, canvasZoom, isPhotoLibraryOpen, tab, workspace]);
+
+  const zoomScale = canvasZoom === "fit" ? null : canvasZoom === "100%" ? 1 : 2;
 
   const sourceLongEdge = decoded.bitmap ? Math.max(decoded.bitmap.width, decoded.bitmap.height) : MAX_PREVIEW_EDGE;
   const orientationSwapsAxes = previewOrientation?.rotation === 90 || previewOrientation?.rotation === 270;
@@ -366,6 +371,7 @@ export function Editor() {
           source={oriented}
           crop={cropPreview ?? activeEntry.edit.crop}
           aspect={aspect}
+          zoomScale={zoomScale}
           onChange={editor.setCrop}
           onConfirm={confirmCrop}
         />
@@ -377,6 +383,7 @@ export function Editor() {
         settings={settings}
         exif={activeEntry.exif}
         captionOverrides={activeEntry.captionOverrides}
+        zoomScale={zoomScale}
       />
     );
   }
@@ -523,7 +530,23 @@ export function Editor() {
               />
             ) : (
               <>
-                <div className="editor-stage" ref={editorStageRef}>
+                <div className="editor-stage" data-canvas-zoom={canvasZoom} ref={editorStageRef}>
+                  {activeEntry && (
+                    <div className="canvas-zoom-controls">
+                      <ButtonGroup size="sm" variant="flat" aria-label={t("canvasZoom")}>
+                        {(["fit", "100%", "200%"] as const).map((option) => (
+                          <Button
+                            key={option}
+                            color={canvasZoom === option ? "primary" : "default"}
+                            aria-pressed={canvasZoom === option}
+                            onPress={() => setCanvasZoom(option)}
+                          >
+                            {option === "fit" ? t("fitScreen") : option}
+                          </Button>
+                        ))}
+                      </ButtonGroup>
+                    </div>
+                  )}
                   {photos.length > 1 && (
                     <Button
                       isIconOnly
