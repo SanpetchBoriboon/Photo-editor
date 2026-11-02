@@ -33,7 +33,13 @@ export function Filmstrip({ photos, activeId, onSelect, onRemove }: FilmstripPro
               photo.id === activeId ? "border-primary" : "border-transparent opacity-70"
             }`}
           >
-            <Image removeWrapper radius="none" src={photo.thumbnailUrl} alt={photo.fileName} className="h-20 w-20 object-cover" />
+            <Image
+              removeWrapper
+              radius="none"
+              src={photo.thumbnailUrl}
+              alt={photo.fileName}
+              className="h-20 w-20 object-cover"
+            />
           </button>
           <Button
             isIconOnly

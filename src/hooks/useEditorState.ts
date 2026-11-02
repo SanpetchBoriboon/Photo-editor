@@ -48,7 +48,9 @@ export function useEditorState() {
 
   function updateActiveEdit(change: (edit: PhotoEdit) => Partial<PhotoEdit>): void {
     setPhotos((previous) =>
-      previous.map((photo) => (photo.id === activeId ? { ...photo, edit: { ...photo.edit, ...change(photo.edit) } } : photo)),
+      previous.map((photo) =>
+        photo.id === activeId ? { ...photo, edit: { ...photo.edit, ...change(photo.edit) } } : photo,
+      ),
     );
   }
 
@@ -98,25 +100,23 @@ export function useEditorState() {
     setCaptionOverride: (field: CaptionField, value: string) =>
       setPhotos((previous) =>
         previous.map((photo) =>
-          photo.id === activeId
-            ? { ...photo, captionOverrides: { ...photo.captionOverrides, [field]: value } }
-            : photo,
+          photo.id === activeId ? { ...photo, captionOverrides: { ...photo.captionOverrides, [field]: value } } : photo,
         ),
       ),
-      applyCaptionOverridesToPhotosWithoutExif: (overrides: CaptionOverrides) =>
-        setPhotos((previous) =>
-          previous.map((photo) => {
-            if (photo.id === activeId || !hasMissingCaptionFields(photo.exif, overrides)) return photo;
-            const exifTexts = getExifTexts(photo.exif);
-            const captionOverrides = { ...photo.captionOverrides };
-            for (const field of CAPTION_FIELDS) {
-              if (!exifTexts[field].trim() && overrides[field]?.trim()) {
-                captionOverrides[field] = overrides[field];
-              }
+    applyCaptionOverridesToPhotosWithoutExif: (overrides: CaptionOverrides) =>
+      setPhotos((previous) =>
+        previous.map((photo) => {
+          if (photo.id === activeId || !hasMissingCaptionFields(photo.exif, overrides)) return photo;
+          const exifTexts = getExifTexts(photo.exif);
+          const captionOverrides = { ...photo.captionOverrides };
+          for (const field of CAPTION_FIELDS) {
+            if (!exifTexts[field].trim() && overrides[field]?.trim()) {
+              captionOverrides[field] = overrides[field];
             }
-            return { ...photo, captionOverrides };
-          }),
-        ),
+          }
+          return { ...photo, captionOverrides };
+        }),
+      ),
     setCredit: (credit: CreditSettings) => setShared((previous) => ({ ...previous, credit })),
   };
 }

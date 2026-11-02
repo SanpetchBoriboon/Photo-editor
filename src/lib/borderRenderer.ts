@@ -1,6 +1,6 @@
 import { buildCaptionLines } from "./caption";
 import type { CaptionLines } from "./caption";
-import { findBrandLogo } from "./brandLogos";
+import { findBrandLogo, findBrandWordmark } from "./brandLogos";
 import type { BorderSettings, CaptionOverrides, CaptionSelection, CreditSettings, ExifData } from "./types";
 
 const FALLBACK_FONT_FAMILY = "sans-serif";
@@ -63,7 +63,7 @@ function drawCreditImage(target: CaptionContext, image: ImageBitmap): void {
   context.drawImage(
     image,
     width - rightBorder - drawWidth,
-    target.captionStartY + target.captionScaleBorder * TITLE_FONT_RATIO / 2 - drawHeight / 2,
+    target.captionStartY + (target.captionScaleBorder * TITLE_FONT_RATIO) / 2 - drawHeight / 2,
     drawWidth,
     drawHeight,
   );
@@ -76,7 +76,7 @@ function drawCreditText(target: CaptionContext, text: string): void {
   context.fillText(
     text,
     width - rightBorder,
-    target.captionStartY + target.captionScaleBorder * TITLE_FONT_RATIO / 2,
+    target.captionStartY + (target.captionScaleBorder * TITLE_FONT_RATIO) / 2,
     (width - target.leftBorder - rightBorder) * RIGHT_AREA_WIDTH_RATIO,
   );
 }
@@ -136,13 +136,22 @@ function getIconBounds(path: string): IconBounds | null {
 }
 
 function drawBrandLogo(target: CaptionContext, brand: string, centerY: number, visibleHeight: number): number {
-  const logo = findBrandLogo(brand);
-  if (!logo) return 0;
   const { context, captionScaleBorder } = target;
-  const bounds = getIconBounds(logo.path);
-  if (!bounds) return 0;
   const maxLogoWidth =
     (target.width - target.leftBorder - target.rightBorder) * LEFT_TEXT_WIDTH_RATIO * BRAND_LOGO_MAX_WIDTH_RATIO;
+  const wordmark = findBrandWordmark(brand);
+  if (wordmark) {
+    const scale = Math.min(visibleHeight / wordmark.height, maxLogoWidth / wordmark.width);
+    const logoWidth = wordmark.width * scale;
+    const logoHeight = wordmark.height * scale;
+    context.drawImage(wordmark, target.leftBorder, centerY - logoHeight / 2, logoWidth, logoHeight);
+    return logoWidth + captionScaleBorder * BRAND_LOGO_GAP_RATIO;
+  }
+
+  const logo = findBrandLogo(brand);
+  if (!logo) return 0;
+  const bounds = getIconBounds(logo.path);
+  if (!bounds) return 0;
   const logoHeight = Math.min(visibleHeight, maxLogoWidth * (bounds.height / bounds.width));
   const scale = logoHeight / bounds.height;
   const logoWidth = bounds.width * scale;
@@ -160,9 +169,7 @@ function drawBrandLogo(target: CaptionContext, brand: string, centerY: number, v
 function drawLeftCaption(target: CaptionContext, captionLines: CaptionLines): void {
   const { context, captionScaleBorder, leftBorder, width } = target;
   const logo = findBrandLogo(captionLines.brand);
-  const title = logo
-    ? captionLines.model
-    : [captionLines.brand, captionLines.model].filter(Boolean).join(" ");
+  const title = logo ? captionLines.model : [captionLines.brand, captionLines.model].filter(Boolean).join(" ");
   const lines: CaptionLine[] = [];
   if (captionLines.brand || captionLines.model) {
     lines.push({
@@ -188,7 +195,7 @@ function drawLeftCaption(target: CaptionContext, captionLines: CaptionLines): vo
   const titleLine = lines.find((line) => line.isTitle);
   const titleCenterY = titleLine
     ? lineTop + titleLine.fontSize / 2
-    : lineTop + captionScaleBorder * TITLE_FONT_RATIO / 2;
+    : lineTop + (captionScaleBorder * TITLE_FONT_RATIO) / 2;
   let logoHeight = titleLine?.fontSize ?? captionScaleBorder * TITLE_FONT_RATIO;
   if (titleLine && captionLines.model) {
     context.font = `${titleLine.weight} ${Math.round(titleLine.fontSize)}px ${getFontFamily()}`;
@@ -200,8 +207,7 @@ function drawLeftCaption(target: CaptionContext, captionLines: CaptionLines): vo
     context.font = `${line.weight} ${Math.round(line.fontSize)}px ${getFontFamily()}`;
     context.globalAlpha = line.opacity;
     const x = leftBorder + (line.isTitle ? logoAdvance : 0);
-    const maxWidth =
-      (width - target.leftBorder - target.rightBorder) * LEFT_TEXT_WIDTH_RATIO - (x - leftBorder);
+    const maxWidth = (width - target.leftBorder - target.rightBorder) * LEFT_TEXT_WIDTH_RATIO - (x - leftBorder);
     context.fillText(line.text, x, lineTop + line.fontSize / 2, maxWidth);
     lineTop += line.fontSize + gap;
   }

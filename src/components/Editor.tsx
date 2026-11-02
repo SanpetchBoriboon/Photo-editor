@@ -12,7 +12,7 @@ import { adjustCropForStraighten, resolveLockedAspect } from "@/lib/cropMath";
 import { exportPhoto, exportPhotosAsZip } from "@/lib/photoIO";
 import { createOrientedCanvas } from "@/lib/renderPipeline";
 import { toEditSettings } from "@/lib/settings";
-import type { PhotoEntry } from "@/lib/types";
+import type { PhotoEntry, PhotoExportSize } from "@/lib/types";
 import type { LayoutMode } from "@/lib/layout";
 import { useLanguage } from "./Providers";
 import { AdjustPanel } from "./AdjustPanel";
@@ -60,13 +60,16 @@ export function Editor() {
   const { photos, activeEntry, shared, selectPhoto: setActivePhoto } = editor;
   const workspace = pathname === "/" ? "home" : pathname.startsWith("/layout/") ? "layout" : "photo";
   const routeMode = pathname.split("/")[2];
-  const layoutMode: LayoutMode = routeMode === "freeform" || routeMode === "print" || routeMode === "composition" ? routeMode : "collage";
+  const layoutMode: LayoutMode =
+    routeMode === "freeform" || routeMode === "print" || routeMode === "composition" ? routeMode : "collage";
   const [tab, setTab] = useState<TabId>("adjust");
   const [isPhotoLibraryOpen, setIsPhotoLibraryOpen] = useState(false);
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [straightenDraft, setStraightenDraft] = useState<number | null>(null);
   const [exportError, setExportError] = useState("");
   const [exportProgress, setExportProgress] = useState<{ done: number; total: number } | null>(null);
+  const [exportSize, setExportSize] = useState<PhotoExportSize>("original");
+  const [customMegapixels, setCustomMegapixels] = useState(5);
 
   const decoded = useDecodedPhoto(activeEntry?.file ?? null);
   const orientation = activeEntry?.edit.orientation ?? null;
@@ -166,10 +169,16 @@ export function Editor() {
     try {
       if (entries.length === 1) {
         setExportProgress({ done: 0, total: 1 });
-        await exportPhoto(entries[0], shared);
+        await exportPhoto(entries[0], shared, exportSize, customMegapixels);
       } else {
         setExportProgress({ done: 0, total: entries.length });
-        await exportPhotosAsZip(entries, shared, (done) => setExportProgress({ done, total: entries.length }));
+        await exportPhotosAsZip(
+          entries,
+          shared,
+          (done) => setExportProgress({ done, total: entries.length }),
+          exportSize,
+          customMegapixels,
+        );
       }
     } catch {
       setExportError(t("exportError"));
@@ -218,6 +227,7 @@ export function Editor() {
       case "info":
         return (
           <InfoPanel
+            key={entry.id}
             exif={entry.exif}
             captionOverrides={entry.captionOverrides}
             caption={shared.caption}
@@ -244,7 +254,14 @@ export function Editor() {
     if (!oriented || !settings) return <Spinner aria-label={t("loadingPhoto")} />;
     if (tab === "crop") {
       const aspect = resolveLockedAspect(activeEntry.edit.aspectId, oriented.width, oriented.height);
-      return <CropTool source={oriented} crop={cropPreview ?? activeEntry.edit.crop} aspect={aspect} onChange={editor.setCrop} />;
+      return (
+        <CropTool
+          source={oriented}
+          crop={cropPreview ?? activeEntry.edit.crop}
+          aspect={aspect}
+          onChange={editor.setCrop}
+        />
+      );
     }
     return (
       <Preview
@@ -272,11 +289,14 @@ export function Editor() {
               <span className="text-primary">frame</span>
             </Link>
           </h1>
-
         </div>
         <ButtonGroup size="sm" variant="flat" aria-label={t("language")}>
           {(["th", "en"] as const).map((option) => (
-            <Button key={option} color={language === option ? "primary" : "default"} onPress={() => setLanguage(option)}>
+            <Button
+              key={option}
+              color={language === option ? "primary" : "default"}
+              onPress={() => setLanguage(option)}
+            >
               {option.toUpperCase()}
             </Button>
           ))}
@@ -285,7 +305,13 @@ export function Editor() {
       {workspaceLinks.length > 1 && (
         <nav className="workspace-nav" aria-label={t("workspaceMode")}>
           {workspaceLinks.map(({ href, labelKey }) => (
-            <Link key={href} href={href} scroll={false} aria-current={pathname === href ? "page" : undefined} onNavigate={() => setIsAdjusting(false)}>
+            <Link
+              key={href}
+              href={href}
+              scroll={false}
+              aria-current={pathname === href ? "page" : undefined}
+              onNavigate={() => setIsAdjusting(false)}
+            >
               {t(labelKey)}
             </Link>
           ))}
@@ -296,137 +322,182 @@ export function Editor() {
 
   return (
     <div className="workspace-shell" hidden={workspace === "home"}>
-    {header}
-    <div className="workspace-content">
-    <main className={isPhotoLibraryOpen ? "editor-layout editor-layout-library" : "editor-layout"} hidden={workspace !== "photo"}>
-      <aside className="editor-sidebar">
-        <div className="editor-upload">
-          <PhotoUpload onAdd={editor.addPhotos} />
-          {photos.length > 0 && (
-            <Button variant="bordered" startContent={<GridIcon />} onPress={() => setIsPhotoLibraryOpen(true)}>
-              {t("photoLibrary")} ({photos.length})
-            </Button>
-          )}
-        </div>
-        {activeEntry && (
-          <Tabs
-            className="editor-tabs"
-            fullWidth
-            aria-label={t("editTools")}
-            selectedKey={tab}
-            onSelectionChange={(key) => {
-              if (key === "crop" || key === "adjust" || key === "border" || key === "info") {
-                setIsAdjusting(false);
-                if (key !== "crop") setStraightenDraft(null);
-                setTab(key);
-              }
-            }}
-          >
-            {TAB_ITEMS.map(({ id, labelKey, icon: Icon }) => (
-              <Tab
-                key={id}
-                aria-label={t(labelKey)}
-                title={
-                  <span className="tool-tab-label">
-                    <Icon />
-                    <span title={t(labelKey)}>{t(labelKey)}</span>
-                  </span>
-                }
-              />
-            ))}
-          </Tabs>
-        )}
-        <div className="editor-tools">{activeEntry && renderToolPanel(activeEntry)}</div>
-        <div className="editor-actions">
-          <Button
-            color="primary"
-            isDisabled={!activeEntry || isExporting || straightenDraft !== null}
-            startContent={<DownloadIcon />}
-            onPress={() => activeEntry && handleExport([activeEntry])}
-          >
-            {t("downloadPhoto")}
-          </Button>
-          {photos.length > 1 && (
-            <Button
-              variant="bordered"
-              isDisabled={isExporting || straightenDraft !== null}
-              startContent={<DownloadIcon />}
-              onPress={() => handleExport(photos)}
-            >
-              {exportProgress
-                ? `${t("exporting")} ${exportProgress.done}/${exportProgress.total}`
-                : `${t("downloadAll")} (${photos.length})`}
-            </Button>
-          )}
-          {photos.length > 0 && (
-            <Button
-              variant="light"
-              color="danger"
-              isDisabled={isExporting}
-              onPress={() => {
-                setStraightenDraft(null);
-                editor.clearPhotos();
-              }}
-            >
-              {t("resetPhotos")}
-            </Button>
-          )}
-          {exportError && <Alert color="danger" title={exportError} />}
-        </div>
-      </aside>
-      <section className="editor-workspace">
-        {isPhotoLibraryOpen ? (
-          <PhotoLibrary
-            photos={photos}
-            activeId={activeEntry?.id ?? null}
-            onAdd={editor.addPhotos}
-            onSelect={selectLibraryPhoto}
-            onClose={() => setIsPhotoLibraryOpen(false)}
-          />
-        ) : (
-          <>
-            <div className="editor-stage">
-              {photos.length > 1 && (
-                <Button
-                  isIconOnly
-                  variant="flat"
-                  aria-label={t("previousPhoto")}
-                  isDisabled={activePhotoIndex <= 0}
-                  onPress={() => activePhotoIndex > 0 && selectPhoto(photos[activePhotoIndex - 1].id)}
-                >
-                  <PreviousPhotoIcon />
-                </Button>
-              )}
-              {renderStage()}
-              {photos.length > 1 && (
-                <Button
-                  isIconOnly
-                  variant="flat"
-                  aria-label={t("nextPhoto")}
-                  isDisabled={activePhotoIndex >= photos.length - 1}
-                  onPress={() => activePhotoIndex < photos.length - 1 && selectPhoto(photos[activePhotoIndex + 1].id)}
-                >
-                  <NextPhotoIcon />
+      {header}
+      <div className="workspace-content">
+        <main
+          className={isPhotoLibraryOpen ? "editor-layout editor-layout-library" : "editor-layout"}
+          hidden={workspace !== "photo"}
+        >
+          <aside className="editor-sidebar">
+            <div className="editor-upload">
+              <PhotoUpload onAdd={editor.addPhotos} />
+              {photos.length > 0 && (
+                <Button variant="bordered" startContent={<GridIcon />} onPress={() => setIsPhotoLibraryOpen(true)}>
+                  {t("photoLibrary")} ({photos.length})
                 </Button>
               )}
             </div>
-            {photos.length > 0 && (
-              <div className="editor-filmstrip">
-                <Filmstrip photos={photos} activeId={activeEntry?.id ?? null} onSelect={selectPhoto} onRemove={removePhoto} />
-              </div>
+            {activeEntry && (
+              <Tabs
+                className="editor-tabs"
+                fullWidth
+                aria-label={t("editTools")}
+                selectedKey={tab}
+                onSelectionChange={(key) => {
+                  if (key === "crop" || key === "adjust" || key === "border" || key === "info") {
+                    setIsAdjusting(false);
+                    if (key !== "crop") setStraightenDraft(null);
+                    setTab(key);
+                  }
+                }}
+              >
+                {TAB_ITEMS.map(({ id, labelKey, icon: Icon }) => (
+                  <Tab
+                    key={id}
+                    aria-label={t(labelKey)}
+                    title={
+                      <span className="tool-tab-label">
+                        <Icon />
+                        <span title={t(labelKey)}>{t(labelKey)}</span>
+                      </span>
+                    }
+                  />
+                ))}
+              </Tabs>
             )}
-          </>
-        )}
-      </section>
-    </main>
-    <LayoutEditor
-      photos={photos}
-      shared={shared}
-      mode={layoutMode}
-      upload={<PhotoUpload onAdd={editor.addPhotos} />}
-      hidden={workspace !== "layout"}
-    />
-    </div>
+            <div className="editor-tools">{activeEntry && renderToolPanel(activeEntry)}</div>
+            <div className="editor-actions">
+              <label className="flex flex-col gap-1 text-sm">
+                {t("exportSize")}
+                <select
+                  className="h-9 rounded-medium border border-default-200 bg-content1 px-3"
+                  value={exportSize}
+                  disabled={isExporting}
+                  onChange={(event) => setExportSize(event.target.value as PhotoExportSize)}
+                >
+                  <option value="original">{t("originalSize")}</option>
+                  <option value="2048px">{t("longestEdge2048")}</option>
+                  <option value="customMp">{t("customSize")}</option>
+                </select>
+              </label>
+              {exportSize === "customMp" && (
+                <label className="flex flex-col gap-1 text-sm">
+                  {t("megapixels")}
+                  <div className="flex items-center gap-2">
+                    <input
+                      aria-label={t("megapixels")}
+                      className="h-9 min-w-0 flex-1 rounded-medium border border-default-200 bg-content1 px-3"
+                      type="number"
+                      min="0.1"
+                      max="100"
+                      step="0.1"
+                      value={customMegapixels}
+                      disabled={isExporting}
+                      onChange={(event) => {
+                        const value = event.currentTarget.valueAsNumber;
+                        if (Number.isFinite(value)) setCustomMegapixels(Math.min(100, Math.max(0.1, value)));
+                      }}
+                    />
+                    <span>MP</span>
+                  </div>
+                </label>
+              )}
+              <Button
+                color="primary"
+                isDisabled={!activeEntry || isExporting || straightenDraft !== null}
+                startContent={<DownloadIcon />}
+                onPress={() => activeEntry && handleExport([activeEntry])}
+              >
+                {t("downloadPhoto")}
+              </Button>
+              {photos.length > 1 && (
+                <Button
+                  variant="bordered"
+                  isDisabled={isExporting || straightenDraft !== null}
+                  startContent={<DownloadIcon />}
+                  onPress={() => handleExport(photos)}
+                >
+                  {exportProgress
+                    ? `${t("exporting")} ${exportProgress.done}/${exportProgress.total}`
+                    : `${t("downloadAll")} (${photos.length})`}
+                </Button>
+              )}
+              {photos.length > 0 && (
+                <Button
+                  variant="light"
+                  color="danger"
+                  isDisabled={isExporting}
+                  onPress={() => {
+                    setStraightenDraft(null);
+                    editor.clearPhotos();
+                  }}
+                >
+                  {t("resetPhotos")}
+                </Button>
+              )}
+              {exportError && <Alert color="danger" title={exportError} />}
+            </div>
+          </aside>
+          <section className="editor-workspace">
+            {isPhotoLibraryOpen ? (
+              <PhotoLibrary
+                photos={photos}
+                activeId={activeEntry?.id ?? null}
+                onAdd={editor.addPhotos}
+                onSelect={selectLibraryPhoto}
+                onClose={() => setIsPhotoLibraryOpen(false)}
+              />
+            ) : (
+              <>
+                <div className="editor-stage">
+                  {photos.length > 1 && (
+                    <Button
+                      isIconOnly
+                      variant="flat"
+                      aria-label={t("previousPhoto")}
+                      isDisabled={activePhotoIndex <= 0}
+                      onPress={() => activePhotoIndex > 0 && selectPhoto(photos[activePhotoIndex - 1].id)}
+                    >
+                      <PreviousPhotoIcon />
+                    </Button>
+                  )}
+                  {renderStage()}
+                  {photos.length > 1 && (
+                    <Button
+                      isIconOnly
+                      variant="flat"
+                      aria-label={t("nextPhoto")}
+                      isDisabled={activePhotoIndex >= photos.length - 1}
+                      onPress={() =>
+                        activePhotoIndex < photos.length - 1 && selectPhoto(photos[activePhotoIndex + 1].id)
+                      }
+                    >
+                      <NextPhotoIcon />
+                    </Button>
+                  )}
+                </div>
+                {photos.length > 0 && (
+                  <div className="editor-filmstrip">
+                    <Filmstrip
+                      photos={photos}
+                      activeId={activeEntry?.id ?? null}
+                      onSelect={selectPhoto}
+                      onRemove={removePhoto}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        </main>
+        <LayoutEditor
+          photos={photos}
+          shared={shared}
+          mode={layoutMode}
+          upload={<PhotoUpload onAdd={editor.addPhotos} />}
+          hidden={workspace !== "layout"}
+        />
+      </div>
     </div>
   );
 }

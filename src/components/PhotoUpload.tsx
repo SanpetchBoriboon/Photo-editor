@@ -91,69 +91,91 @@ export function PhotoUpload({ onAdd }: PhotoUploadProps) {
             .replace("{total}", String(importProgress.total))}
         </p>
       )}
-      {problems.length > 0 && (
-        <Alert color="danger" title={t("uploadProblems")} description={problems.join(" • ")} />
-      )}
-          <Modal
-            isOpen={stagedPhotos.length > 0}
-            onOpenChange={(isOpen) => {
-              if (!isOpen && !isLoading) closeSelection();
-            }}
-            isDismissable={!isLoading}
-            isKeyboardDismissDisabled={isLoading}
-            scrollBehavior="inside"
-            size="5xl"
-          >
-            <ModalContent>
-              {(onClose) => (
-                <>
-                  <ModalHeader className="photo-import-header">
-                    <div>
-                      <h2>{t("importSelection")}</h2>
-                      <p>{t("selectedPhotos").replace("{count}", String(selectedCount))}</p>
-                    </div>
-                    <Button variant="light" onPress={() => setStagedPhotos((current) => current.map((photo) => ({ ...photo, selected: selectedCount !== current.length })))}>
-                      {selectedCount === stagedPhotos.length ? t("deselectAll") : t("selectAll")}
-                    </Button>
-                  </ModalHeader>
-                  <ModalBody className="photo-import-body">
-                    {problems.length > 0 && <Alert color="danger" title={t("uploadProblems")} description={problems.join(" • ")} />}
-                    <div className="photo-import-grid">
-                      {stagedPhotos.map((photo) => (
-                        <button
-                          key={photo.id}
-                          type="button"
-                          className="photo-import-item"
-                          aria-label={`${t("selectPhoto")} ${photo.file.name}`}
-                          aria-pressed={photo.selected}
-                          onClick={() => setStagedPhotos((current) => current.map((item) => item.id === photo.id ? { ...item, selected: !item.selected } : item))}
-                        >
-                          <span className="photo-import-thumbnail">
-                            <Image removeWrapper radius="none" src={photo.previewUrl} alt="" />
-                            <span className="photo-import-check" aria-hidden="true">{photo.selected ? "✓" : ""}</span>
-                          </span>
-                          <span className="photo-import-filename" title={photo.file.name}>{photo.file.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </ModalBody>
-                  <ModalFooter className="photo-import-footer">
-                    <UploadButton label={t("addMorePhotos")} multiple isDisabled={isLoading} onFiles={handleFiles} />
-                    <div className="photo-import-footer-actions">
-                      <Button variant="flat" isDisabled={isLoading} onPress={() => { closeSelection(); onClose(); }}>
-                        {t("cancel")}
-                      </Button>
-                      <Button color="primary" isDisabled={isLoading || selectedCount === 0} onPress={importSelectedPhotos}>
-                        {isLoading && importProgress
-                          ? `${t("importProgress").replace("{done}", String(importProgress.done)).replace("{total}", String(importProgress.total))}`
-                          : `${t("importSelected")} (${selectedCount})`}
-                      </Button>
-                    </div>
-                  </ModalFooter>
-                </>
-              )}
-            </ModalContent>
-          </Modal>
+      {problems.length > 0 && <Alert color="danger" title={t("uploadProblems")} description={problems.join(" • ")} />}
+      <Modal
+        isOpen={stagedPhotos.length > 0}
+        onOpenChange={(isOpen) => {
+          if (!isOpen && !isLoading) closeSelection();
+        }}
+        isDismissable={!isLoading}
+        isKeyboardDismissDisabled={isLoading}
+        scrollBehavior="inside"
+        size="5xl"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="photo-import-header">
+                <div>
+                  <h2>{t("importSelection")}</h2>
+                  <p>{t("selectedPhotos").replace("{count}", String(selectedCount))}</p>
+                </div>
+                <Button
+                  variant="light"
+                  onPress={() =>
+                    setStagedPhotos((current) =>
+                      current.map((photo) => ({ ...photo, selected: selectedCount !== current.length })),
+                    )
+                  }
+                >
+                  {selectedCount === stagedPhotos.length ? t("deselectAll") : t("selectAll")}
+                </Button>
+              </ModalHeader>
+              <ModalBody className="photo-import-body">
+                {problems.length > 0 && (
+                  <Alert color="danger" title={t("uploadProblems")} description={problems.join(" • ")} />
+                )}
+                <div className="photo-import-grid">
+                  {stagedPhotos.map((photo) => (
+                    <button
+                      key={photo.id}
+                      type="button"
+                      className="photo-import-item"
+                      aria-label={`${t("selectPhoto")} ${photo.file.name}`}
+                      aria-pressed={photo.selected}
+                      onClick={() =>
+                        setStagedPhotos((current) =>
+                          current.map((item) => (item.id === photo.id ? { ...item, selected: !item.selected } : item)),
+                        )
+                      }
+                    >
+                      <span className="photo-import-thumbnail">
+                        <Image removeWrapper radius="none" src={photo.previewUrl} alt="" />
+                        <span className="photo-import-check" aria-hidden="true">
+                          {photo.selected ? "✓" : ""}
+                        </span>
+                      </span>
+                      <span className="photo-import-filename" title={photo.file.name}>
+                        {photo.file.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </ModalBody>
+              <ModalFooter className="photo-import-footer">
+                <UploadButton label={t("addMorePhotos")} multiple isDisabled={isLoading} onFiles={handleFiles} />
+                <div className="photo-import-footer-actions">
+                  <Button
+                    variant="flat"
+                    isDisabled={isLoading}
+                    onPress={() => {
+                      closeSelection();
+                      onClose();
+                    }}
+                  >
+                    {t("cancel")}
+                  </Button>
+                  <Button color="primary" isDisabled={isLoading || selectedCount === 0} onPress={importSelectedPhotos}>
+                    {isLoading && importProgress
+                      ? `${t("importProgress").replace("{done}", String(importProgress.done)).replace("{total}", String(importProgress.total))}`
+                      : `${t("importSelected")} (${selectedCount})`}
+                  </Button>
+                </div>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

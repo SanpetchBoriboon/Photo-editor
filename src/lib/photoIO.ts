@@ -12,12 +12,15 @@ import {
 } from "./constants";
 import { zipSync } from "fflate";
 import { readExif } from "./exif";
+import { prepareBrandLogos } from "./brandLogos";
 import { createOrientedCanvas, renderEdit } from "./renderPipeline";
 import { toEditSettings } from "./settings";
 import type { ValidationErrorKey } from "./i18n";
-import type { PhotoEntry, SharedSettings } from "./types";
+import type { PhotoEntry, PhotoExportSize, SharedSettings } from "./types";
 
 const REVOKE_URL_DELAY_MS = 10_000;
+const MEGAPIXEL = 1_000_000;
+const MAX_EXPORT_EDGE = 2048;
 
 export function validateImageFile(file: File): ValidationErrorKey | null {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return "unsupportedImage";
@@ -55,10 +58,7 @@ function sanitizeFileName(name: string): string {
 
 // EXIF lives at the start of a JPEG, so only the head of the file is read.
 export async function createPhotoEntry(file: File): Promise<PhotoEntry> {
-  const [head, thumbnailUrl] = await Promise.all([
-    file.slice(0, EXIF_READ_BYTES).arrayBuffer(),
-    createThumbnail(file),
-  ]);
+  const [head, thumbnailUrl] = await Promise.all([file.slice(0, EXIF_READ_BYTES).arrayBuffer(), createThumbnail(file)]);
   return {
     id: crypto.randomUUID(),
     file,
@@ -93,6 +93,30 @@ function flatten(canvas: HTMLCanvasElement): HTMLCanvasElement {
   return flat;
 }
 
+function resizeForExport(
+  canvas: HTMLCanvasElement,
+  size: PhotoExportSize,
+  customMegapixels: number,
+): HTMLCanvasElement {
+  if (size === "original") return canvas;
+  const scale =
+    size === "2048px"
+      ? Math.min(1, MAX_EXPORT_EDGE / Math.max(canvas.width, canvas.height))
+      : Math.min(
+          1,
+          Math.sqrt((Math.min(100, Math.max(0.1, customMegapixels)) * MEGAPIXEL) / (canvas.width * canvas.height)),
+        );
+  if (scale === 1) return canvas;
+
+  const resized = document.createElement("canvas");
+  resized.width = Math.max(1, Math.round(canvas.width * scale));
+  resized.height = Math.max(1, Math.round(canvas.height * scale));
+  const context = resized.getContext("2d");
+  if (!context) return canvas;
+  context.drawImage(canvas, 0, 0, resized.width, resized.height);
+  return resized;
+}
+
 function triggerDownload(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -105,20 +129,31 @@ function triggerDownload(blob: Blob, fileName: string): void {
 }
 
 // Decodes the full-resolution image only for the duration of the export.
-async function renderPhotoBlob(entry: PhotoEntry, shared: SharedSettings): Promise<Blob> {
-  await document.fonts.ready;
+async function renderPhotoBlob(
+  entry: PhotoEntry,
+  shared: SharedSettings,
+  exportSize: PhotoExportSize,
+  customMegapixels: number,
+): Promise<Blob> {
+  await Promise.all([document.fonts.ready, prepareBrandLogos()]);
   const bitmap = await decodeImage(entry.file);
   try {
     const settings = toEditSettings(entry.edit, shared);
     const oriented = createOrientedCanvas(bitmap, settings.orientation, Infinity);
-    return await canvasToBlob(flatten(renderEdit(oriented, settings, entry.exif, entry.captionOverrides)));
+    const rendered = renderEdit(oriented, settings, entry.exif, entry.captionOverrides);
+    return await canvasToBlob(flatten(resizeForExport(rendered, exportSize, customMegapixels)));
   } finally {
     bitmap.close();
   }
 }
 
-export async function exportPhoto(entry: PhotoEntry, shared: SharedSettings): Promise<void> {
-  const blob = await renderPhotoBlob(entry, shared);
+export async function exportPhoto(
+  entry: PhotoEntry,
+  shared: SharedSettings,
+  exportSize: PhotoExportSize = "original",
+  customMegapixels = 5,
+): Promise<void> {
+  const blob = await renderPhotoBlob(entry, shared, exportSize, customMegapixels);
   triggerDownload(blob, `${entry.fileName}-edited.jpg`);
 }
 
@@ -126,11 +161,13 @@ export async function exportPhotosAsZip(
   entries: PhotoEntry[],
   shared: SharedSettings,
   onProgress: (done: number) => void,
+  exportSize: PhotoExportSize = "original",
+  customMegapixels = 5,
 ): Promise<void> {
   const files: Record<string, Uint8Array> = {};
   const nameCounts = new Map<string, number>();
   for (const [index, entry] of entries.entries()) {
-    const blob = await renderPhotoBlob(entry, shared);
+    const blob = await renderPhotoBlob(entry, shared, exportSize, customMegapixels);
     const baseName = `${entry.fileName}-edited`;
     const count = (nameCounts.get(baseName) ?? 0) + 1;
     nameCounts.set(baseName, count);

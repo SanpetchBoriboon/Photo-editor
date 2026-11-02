@@ -67,6 +67,7 @@ export const DEFAULT_CAPTION: CaptionSelection = {
   lens: true,
   aperture: true,
   shutter: true,
+  iso: true,
 };
 
 export const FREE_ASPECT_ID = "free";
@@ -128,4 +129,5 @@ export const CAPTION_FIELD_LABELS: Record<CaptionField, string> = {
   lens: "เลนส์",
   aperture: "ค่ารูรับแสง",
   shutter: "ความเร็วชัตเตอร์",
+  iso: "ISO",
 };

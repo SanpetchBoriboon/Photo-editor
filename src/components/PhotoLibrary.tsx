@@ -19,11 +19,15 @@ export function PhotoLibrary({ photos, activeId, onAdd, onSelect, onClose }: Pho
       <header className="editor-library-header">
         <div className="editor-library-heading">
           <h2>{t("photoLibrary")}</h2>
-          <span>{photos.length} {t("photosUnit")}</span>
+          <span>
+            {photos.length} {t("photosUnit")}
+          </span>
         </div>
         <div className="editor-library-actions">
           <PhotoUpload onAdd={onAdd} />
-          <Button variant="flat" onPress={onClose}>{t("backToEditor")}</Button>
+          <Button variant="flat" onPress={onClose}>
+            {t("backToEditor")}
+          </Button>
         </div>
       </header>
       <div className="editor-library-grid">
@@ -39,9 +43,15 @@ export function PhotoLibrary({ photos, activeId, onAdd, onSelect, onClose }: Pho
             <span className="editor-library-thumbnail">
               <Image removeWrapper radius="none" src={photo.thumbnailUrl} alt="" />
               <span className="editor-library-index">{index + 1}</span>
-              {photo.id === activeId && <span className="editor-library-selected-mark" aria-hidden="true">✓</span>}
+              {photo.id === activeId && (
+                <span className="editor-library-selected-mark" aria-hidden="true">
+                  ✓
+                </span>
+              )}
             </span>
-            <span className="editor-library-filename" title={photo.fileName}>{photo.fileName}</span>
+            <span className="editor-library-filename" title={photo.fileName}>
+              {photo.fileName}
+            </span>
           </button>
         ))}
       </div>

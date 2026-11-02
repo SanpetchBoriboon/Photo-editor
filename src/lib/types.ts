@@ -5,6 +5,7 @@ export interface ExifData {
   lensModel?: string;
   exposureTime?: number;
   fNumber?: number;
+  iso?: number;
 }
 
 export interface Adjustments {
@@ -42,13 +43,15 @@ export interface BorderSettings {
   canvasAspect: number | null;
 }
 
-export type CaptionField = "make" | "model" | "lens" | "aperture" | "shutter";
+export type CaptionField = "make" | "model" | "lens" | "aperture" | "shutter" | "iso";
 
 export type CaptionOverrides = Partial<Record<CaptionField, string>>;
 
 export type CaptionSelection = Record<CaptionField, boolean>;
 
 export type CreditMode = "off" | "text" | "image";
+
+export type PhotoExportSize = "original" | "2048px" | "customMp";
 
 export interface CreditSettings {
   mode: CreditMode;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { prepareBrandLogos } from "@/lib/brandLogos";
 import { renderEdit } from "@/lib/renderPipeline";
 import type { CaptionOverrides, EditSettings, ExifData } from "@/lib/types";
 
@@ -20,7 +21,7 @@ export function Preview({ source, settings, exif, captionOverrides }: PreviewPro
     if (!target) return undefined;
     let cancelled = false;
     const frame = requestAnimationFrame(() => {
-      void document.fonts.ready.then(() => {
+      void Promise.all([document.fonts.ready, prepareBrandLogos()]).then(() => {
         if (cancelled) return;
         const rendered = renderEdit(source, settings, exif, captionOverrides);
         target.width = rendered.width;

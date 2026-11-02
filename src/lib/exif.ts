@@ -15,10 +15,14 @@ const TAG_MODEL = 0x0110;
 const TAG_EXIF_IFD_POINTER = 0x8769;
 const TAG_EXPOSURE_TIME = 0x829a;
 const TAG_F_NUMBER = 0x829d;
+const TAG_PHOTOGRAPHIC_SENSITIVITY = 0x8827;
+const TAG_ISO_SPEED = 0x8833;
 const TAG_LENS_MAKE = 0xa433;
 const TAG_LENS_MODEL = 0xa434;
 
 const TYPE_ASCII = 2;
+const TYPE_SHORT = 3;
+const TYPE_LONG = 4;
 const TYPE_RATIONAL = 5;
 const TYPE_SIZES: Record<number, number> = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1 };
 
@@ -42,12 +46,7 @@ function findTiffStart(view: DataView): number {
   return -1;
 }
 
-function readIfd(
-  view: DataView,
-  tiffStart: number,
-  ifdOffset: number,
-  littleEndian: boolean,
-): Map<number, IfdEntry> {
+function readIfd(view: DataView, tiffStart: number, ifdOffset: number, littleEndian: boolean): Map<number, IfdEntry> {
   const entries = new Map<number, IfdEntry>();
   const ifdStart = tiffStart + ifdOffset;
   const entryCount = view.getUint16(ifdStart, littleEndian);
@@ -57,9 +56,7 @@ function readIfd(
     const count = view.getUint32(entryStart + 4, littleEndian);
     const byteLength = (TYPE_SIZES[type] ?? 1) * count;
     const valueStart =
-      byteLength <= INLINE_VALUE_SIZE
-        ? entryStart + 8
-        : tiffStart + view.getUint32(entryStart + 8, littleEndian);
+      byteLength <= INLINE_VALUE_SIZE ? entryStart + 8 : tiffStart + view.getUint32(entryStart + 8, littleEndian);
     entries.set(view.getUint16(entryStart, littleEndian), { type, count, valueStart });
   }
   return entries;
@@ -84,6 +81,14 @@ function readNumber(view: DataView, entry: IfdEntry | undefined, littleEndian: b
   return entry?.type === TYPE_RATIONAL ? decodeRational(view, entry, littleEndian) : undefined;
 }
 
+function readIso(view: DataView, entries: Map<number, IfdEntry>, littleEndian: boolean): number | undefined {
+  const entry = entries.get(TAG_ISO_SPEED) ?? entries.get(TAG_PHOTOGRAPHIC_SENSITIVITY);
+  if (!entry || entry.count < 1) return undefined;
+  if (entry.type === TYPE_SHORT) return view.getUint16(entry.valueStart, littleEndian) || undefined;
+  if (entry.type === TYPE_LONG) return view.getUint32(entry.valueStart, littleEndian) || undefined;
+  return undefined;
+}
+
 function parseExif(buffer: ArrayBuffer): ExifData {
   const view = new DataView(buffer);
   const tiffStart = findTiffStart(view);
@@ -101,6 +106,7 @@ function parseExif(buffer: ArrayBuffer): ExifData {
     lensModel: readString(view, exifIfd.get(TAG_LENS_MODEL)),
     exposureTime: readNumber(view, exifIfd.get(TAG_EXPOSURE_TIME), littleEndian),
     fNumber: readNumber(view, exifIfd.get(TAG_F_NUMBER), littleEndian),
+    iso: readIso(view, exifIfd, littleEndian),
   };
 }
 

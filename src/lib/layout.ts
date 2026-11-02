@@ -71,11 +71,20 @@ export function getLayoutFrames(ids: string[], settings: LayoutSettings, mode: L
     const gap = Math.min(settings.gap, contentWidth * 0.1, contentHeight / (ids.length * 2));
     const leadWidth = (contentWidth - gap) * 0.64;
     const smallHeight = (contentHeight - gap * (ids.length - 2)) / (ids.length - 1);
-    return ids.map((id, index) => index === 0
-      ? { id, x: margin, y: margin, width: leadWidth, height: contentHeight }
-      : { id, x: margin + leadWidth + gap, y: margin + (index - 1) * (smallHeight + gap), width: contentWidth - leadWidth - gap, height: smallHeight });
+    return ids.map((id, index) =>
+      index === 0
+        ? { id, x: margin, y: margin, width: leadWidth, height: contentHeight }
+        : {
+            id,
+            x: margin + leadWidth + gap,
+            y: margin + (index - 1) * (smallHeight + gap),
+            width: contentWidth - leadWidth - gap,
+            height: smallHeight,
+          },
+    );
   }
-  const columns = template === "rows" ? 1 : template === "columns" ? ids.length : Math.min(ids.length, Math.max(1, settings.columns));
+  const columns =
+    template === "rows" ? 1 : template === "columns" ? ids.length : Math.min(ids.length, Math.max(1, settings.columns));
   const rows = Math.ceil(ids.length / columns);
   const gap = Math.min(settings.gap, contentWidth / (columns * 2), contentHeight / (rows * 2));
   const cellWidth = (contentWidth - gap * (columns - 1)) / columns;
@@ -95,16 +104,23 @@ export function drawLayoutPhoto(
   source: HTMLCanvasElement,
   fit: LayoutSettings["fit"],
 ): void {
-  const ratio = fit === "cover"
-    ? Math.max(frame.width / source.width, frame.height / source.height)
-    : Math.min(frame.width / source.width, frame.height / source.height);
+  const ratio =
+    fit === "cover"
+      ? Math.max(frame.width / source.width, frame.height / source.height)
+      : Math.min(frame.width / source.width, frame.height / source.height);
   const drawWidth = source.width * ratio;
   const drawHeight = source.height * ratio;
   context.save();
   context.beginPath();
   context.rect(frame.x, frame.y, frame.width, frame.height);
   context.clip();
-  context.drawImage(source, frame.x + (frame.width - drawWidth) / 2, frame.y + (frame.height - drawHeight) / 2, drawWidth, drawHeight);
+  context.drawImage(
+    source,
+    frame.x + (frame.width - drawWidth) / 2,
+    frame.y + (frame.height - drawHeight) / 2,
+    drawWidth,
+    drawHeight,
+  );
   context.restore();
 }
 
@@ -139,7 +155,12 @@ export function drawLayout(
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.font = `600 ${titleSize}px ${font}`;
-    context.fillText(settings.title, settings.width / 2, textTop + availableHeight * (settings.subtitle ? 0.36 : 0.5), frame.width);
+    context.fillText(
+      settings.title,
+      settings.width / 2,
+      textTop + availableHeight * (settings.subtitle ? 0.36 : 0.5),
+      frame.width,
+    );
     context.font = `400 ${titleSize * 0.48}px ${font}`;
     context.fillText(settings.subtitle, settings.width / 2, textTop + availableHeight * 0.72, frame.width);
   }

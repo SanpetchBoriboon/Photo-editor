@@ -59,7 +59,9 @@ body {
   border: 1px solid hsl(var(--heroui-default-300));
   border-radius: 8px;
   background: hsl(var(--heroui-content1));
-  transition: border-color 150ms ease, transform 150ms ease;
+  transition:
+    border-color 150ms ease,
+    transform 150ms ease;
 }
 
 .home-choice:hover {
@@ -95,8 +97,22 @@ body {
   border: 2px solid #ffffff;
   box-shadow: 0 0 0 120px #00000030;
   background-image:
-    linear-gradient(to right, transparent 33%, #ffffff60 33% calc(33% + 1px), transparent calc(33% + 1px) 66%, #ffffff60 66% calc(66% + 1px), transparent calc(66% + 1px)),
-    linear-gradient(to bottom, transparent 33%, #ffffff60 33% calc(33% + 1px), transparent calc(33% + 1px) 66%, #ffffff60 66% calc(66% + 1px), transparent calc(66% + 1px));
+    linear-gradient(
+      to right,
+      transparent 33%,
+      #ffffff60 33% calc(33% + 1px),
+      transparent calc(33% + 1px) 66%,
+      #ffffff60 66% calc(66% + 1px),
+      transparent calc(66% + 1px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 33%,
+      #ffffff60 33% calc(33% + 1px),
+      transparent calc(33% + 1px) 66%,
+      #ffffff60 66% calc(66% + 1px),
+      transparent calc(66% + 1px)
+    );
 }
 
 .home-layout-preview {
@@ -237,7 +253,9 @@ body {
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-  transition: color 150ms ease, border-color 150ms ease;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
 }
 
 .workspace-nav a:hover {
@@ -377,7 +395,9 @@ body {
   background: #29292b;
   text-align: left;
   cursor: pointer;
-  transition: border-color 140ms ease, background-color 140ms ease;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
 }
 
 .editor-library-item:hover {
@@ -611,8 +631,22 @@ body {
   border: 1px solid #fff;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
   background-image:
-    linear-gradient(to right, transparent 33%, rgba(255, 255, 255, 0.35) 33% calc(33% + 1px), transparent calc(33% + 1px) 66%, rgba(255, 255, 255, 0.35) 66% calc(66% + 1px), transparent calc(66% + 1px)),
-    linear-gradient(to bottom, transparent 33%, rgba(255, 255, 255, 0.35) 33% calc(33% + 1px), transparent calc(33% + 1px) 66%, rgba(255, 255, 255, 0.35) 66% calc(66% + 1px), transparent calc(66% + 1px));
+    linear-gradient(
+      to right,
+      transparent 33%,
+      rgba(255, 255, 255, 0.35) 33% calc(33% + 1px),
+      transparent calc(33% + 1px) 66%,
+      rgba(255, 255, 255, 0.35) 66% calc(66% + 1px),
+      transparent calc(66% + 1px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 33%,
+      rgba(255, 255, 255, 0.35) 33% calc(33% + 1px),
+      transparent calc(33% + 1px) 66%,
+      rgba(255, 255, 255, 0.35) 66% calc(66% + 1px),
+      transparent calc(66% + 1px)
+    );
   cursor: move;
 }
 

@@ -1,6 +1,6 @@
 import type { CaptionField, CaptionOverrides, CaptionSelection, ExifData } from "./types";
 
-export const CAPTION_FIELDS: readonly CaptionField[] = ["make", "model", "lens", "aperture", "shutter"];
+export const CAPTION_FIELDS: readonly CaptionField[] = ["make", "model", "lens", "aperture", "shutter", "iso"];
 
 export const DETAILS_SEPARATOR = "   ";
 const APERTURE_DECIMALS = 1;
@@ -16,6 +16,10 @@ export function formatShutter(exposureTime: number | undefined): string {
   return `1/${Math.round(1 / exposureTime)}s`;
 }
 
+export function formatISO(iso: number | undefined): string {
+  return iso && Number.isFinite(iso) ? `ISO ${Math.round(iso)}` : "";
+}
+
 export function getExifTexts(exif: ExifData): Record<CaptionField, string> {
   const lensMake = exif.lensMake?.trim() ?? "";
   const lensModel = exif.lensModel?.trim() ?? "";
@@ -28,6 +32,7 @@ export function getExifTexts(exif: ExifData): Record<CaptionField, string> {
     lens: fullLensName,
     aperture: formatAperture(exif.fNumber),
     shutter: formatShutter(exif.exposureTime),
+    iso: formatISO(exif.iso),
   };
 }
 
@@ -44,6 +49,7 @@ export function getCaptionTexts(exif: ExifData, overrides: CaptionOverrides): Re
     lens: overrides.lens?.trim() || texts.lens,
     aperture: overrides.aperture?.trim() || texts.aperture,
     shutter: overrides.shutter?.trim() || texts.shutter,
+    iso: overrides.iso?.trim() || texts.iso,
   };
 }
 
@@ -73,7 +79,12 @@ export function buildCaptionLines(
     brand: make,
     model,
     details: joinNonEmpty(
-      [selection.lens ? texts.lens : "", selection.aperture ? texts.aperture : "", selection.shutter ? texts.shutter : ""],
+      [
+        selection.lens ? texts.lens : "",
+        selection.aperture ? texts.aperture : "",
+        selection.shutter ? texts.shutter : "",
+        selection.iso ? texts.iso : "",
+      ],
       DETAILS_SEPARATOR,
     ),
   };

@@ -31,10 +31,7 @@ function getSafeCropRect(imageWidth: number, imageHeight: number, crop: CropRect
   const cosine = Math.abs(Math.cos(angle));
   const sine = Math.abs(Math.sin(angle));
   const pixelAspect = (crop.width * imageWidth) / (crop.height * imageHeight);
-  const safeHeight = Math.min(
-    imageWidth / (pixelAspect * cosine + sine),
-    imageHeight / (pixelAspect * sine + cosine),
-  );
+  const safeHeight = Math.min(imageWidth / (pixelAspect * cosine + sine), imageHeight / (pixelAspect * sine + cosine));
   const safeWidth = pixelAspect * safeHeight;
   const width = safeWidth / imageWidth;
   const height = safeHeight / imageHeight;
@@ -99,7 +96,11 @@ function resizeCornerKeepingAspect(
   const rawHeight = Math.max(0, movesSouth ? cornerY - anchorY : anchorY - cornerY);
   const availableWidth = movesEast ? 1 - anchorX : anchorX;
   const availableHeight = movesSouth ? 1 - anchorY : anchorY;
-  const width = Math.min(Math.max(rawWidth, rawHeight * aspect, MIN_CROP_SIZE), availableWidth, availableHeight * aspect);
+  const width = Math.min(
+    Math.max(rawWidth, rawHeight * aspect, MIN_CROP_SIZE),
+    availableWidth,
+    availableHeight * aspect,
+  );
   const height = width / aspect;
   return {
     x: movesEast ? anchorX : anchorX - width,
