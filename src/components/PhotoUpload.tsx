@@ -16,9 +16,10 @@ interface StagedPhoto {
 
 interface PhotoUploadProps {
   onAdd: (entries: PhotoEntry[]) => void;
+  prominent?: boolean;
 }
 
-export function PhotoUpload({ onAdd }: PhotoUploadProps) {
+export function PhotoUpload({ onAdd, prominent = false }: PhotoUploadProps) {
   const { t } = useLanguage();
   const [stagedPhotos, setStagedPhotos] = useState<StagedPhoto[]>([]);
   const [problems, setProblems] = useState<string[]>([]);
@@ -77,11 +78,13 @@ export function PhotoUpload({ onAdd }: PhotoUploadProps) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className={prominent ? "photo-upload-editor" : "flex flex-col gap-2"}>
       <UploadButton
         multiple
         label={isLoading ? t("loading") : t("upload")}
         isDisabled={isLoading}
+        isPrimary={prominent}
+        buttonClassName={prominent ? "editor-upload-primary" : undefined}
         onFiles={handleFiles}
       />
       {isLoading && importProgress && (

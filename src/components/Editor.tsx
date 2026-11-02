@@ -330,10 +330,17 @@ export function Editor() {
         >
           <aside className="editor-sidebar">
             <div className="editor-upload">
-              <PhotoUpload onAdd={editor.addPhotos} />
-              {photos.length > 0 && (
-                <Button variant="bordered" startContent={<GridIcon />} onPress={() => setIsPhotoLibraryOpen(true)}>
-                  {t("photoLibrary")} ({photos.length})
+              {photos.length === 0 ? (
+                <PhotoUpload onAdd={editor.addPhotos} prominent />
+              ) : (
+                <Button
+                  className="editor-library-action"
+                  variant="light"
+                  startContent={<GridIcon />}
+                  onPress={() => setIsPhotoLibraryOpen(true)}
+                >
+                  <span>{t("photoLibrary")}</span>
+                  <span className="editor-library-count">{photos.length}</span>
                 </Button>
               )}
             </div>

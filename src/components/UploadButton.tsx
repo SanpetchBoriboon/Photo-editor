@@ -9,16 +9,27 @@ interface UploadButtonProps {
   label: string;
   multiple?: boolean;
   isDisabled?: boolean;
+  isPrimary?: boolean;
+  buttonClassName?: string;
   onFiles: (files: File[]) => void;
 }
 
-export function UploadButton({ label, multiple = false, isDisabled = false, onFiles }: UploadButtonProps) {
+export function UploadButton({
+  label,
+  multiple = false,
+  isDisabled = false,
+  isPrimary = false,
+  buttonClassName,
+  onFiles,
+}: UploadButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
     <>
       <Button
-        variant="bordered"
+        className={buttonClassName}
+        color={isPrimary ? "primary" : "default"}
+        variant={isPrimary ? "solid" : "bordered"}
         isDisabled={isDisabled}
         startContent={<UploadIcon />}
         onPress={() => inputRef.current?.click()}

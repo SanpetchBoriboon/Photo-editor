@@ -308,6 +308,52 @@ body {
   background: var(--heroui-content1);
 }
 
+.editor-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.photo-upload-editor {
+  width: 100%;
+  min-width: 0;
+}
+
+.editor-upload-primary {
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  justify-content: flex-start;
+  padding-inline: 16px;
+  font-weight: 600;
+}
+
+.editor-library-action {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  justify-content: flex-start;
+  padding-inline: 14px;
+  border: 1px solid hsl(var(--heroui-default-200));
+}
+
+.editor-library-count {
+  display: inline-flex;
+  min-width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  margin-inline-start: auto;
+  padding-inline: 6px;
+  border-radius: 999px;
+  background: hsl(var(--heroui-default-100));
+  color: hsl(var(--heroui-foreground));
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .editor-workspace {
   grid-column: 2;
   grid-row: 1;
