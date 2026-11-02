@@ -16,6 +16,12 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Photo Processing
+
+Photo editing runs locally in the browser. The editor accepts JPEG, PNG, and WebP files; HEIF is not currently supported. When WebGPU is available, color adjustments run in a compute shader that converts sRGB values to linear light, applies the adjustments using floating-point arithmetic, and converts the result back to sRGB. If WebGPU is unavailable or fails, the editor falls back to its CPU renderer.
+
+Interactive previews are reduced to 800 px on the longest edge while an adjustment slider is being dragged, then render up to 1600 px. Photo exports are rendered from the full-resolution source and saved as JPEG. Layout exports are PNG. The color pipeline improves local adjustment precision but cannot recover detail already clipped or discarded in an 8-bit JPEG.
+
 ## Layout Workspace
 
 Upload photos on any workspace page, then use the navigation links to switch tools. Crops, color adjustments, borders, and captions from the photo editor are included in layouts.
