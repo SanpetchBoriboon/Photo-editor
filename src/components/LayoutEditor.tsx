@@ -48,7 +48,7 @@ async function preparePhoto(entry: PhotoEntry, shared: SharedSettings, maxEdge: 
   const [, bitmap] = await Promise.all([prepareBrandLogos(), decodeImage(entry.file)]);
   try {
     const settings = toEditSettings(entry.edit, shared);
-    return renderEdit(
+    return await renderEdit(
       createOrientedCanvas(bitmap, settings.orientation, maxEdge),
       settings,
       entry.exif,

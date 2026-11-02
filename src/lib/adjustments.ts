@@ -1,4 +1,5 @@
 import { DEFAULT_ADJUSTMENTS } from "./constants";
+import { applyWebGPUAdjustments } from "./webGpuAdjustments";
 import type { Adjustments } from "./types";
 
 const CHANNEL_MAX = 255;
@@ -111,8 +112,12 @@ function isNeutral(adjustments: Adjustments): boolean {
   );
 }
 
-export function applyAdjustments(canvas: HTMLCanvasElement, adjustments: Adjustments): void {
+export async function applyAdjustments(canvas: HTMLCanvasElement, adjustments: Adjustments): Promise<void> {
   if (isNeutral(adjustments)) return;
+  try {
+    if (await applyWebGPUAdjustments(canvas, adjustments)) return;
+  } catch {}
+
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) return;
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height);

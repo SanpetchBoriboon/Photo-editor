@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Tooltip } from "@heroui/react";
+import { Button, Select, SelectItem, Tooltip } from "@heroui/react";
 import type { KeyboardEvent } from "react";
 import {
   ASPECT_PRESETS,
@@ -39,6 +39,8 @@ export function CropPanel({
   onReset,
 }: CropPanelProps) {
   const { t } = useLanguage();
+  const aspectPresets = ASPECT_PRESETS.filter((preset) => preset.category !== "social");
+  const socialPresets = ASPECT_PRESETS.filter((preset) => preset.category === "social");
   const aspectLabel = (id: string, label: string, ratio: number | "original" | null) => {
     if (id === "free") return t("free");
     if (id === "original") return t("original");
@@ -60,35 +62,39 @@ export function CropPanel({
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-sm text-default-500">{t("aspectRatio")}</h2>
-      <div className="flex flex-wrap gap-2">
-        {ASPECT_PRESETS.filter((preset) => preset.category !== "social").map((preset) => (
-          <Button
-            key={preset.id}
-            size="sm"
-            radius="full"
-            color={preset.id === aspectId ? "primary" : "default"}
-            variant={preset.id === aspectId ? "solid" : "flat"}
-            onPress={() => onSelectAspect(preset.id)}
-          >
-            {aspectLabel(preset.id, preset.label, preset.ratio)}
-          </Button>
-        ))}
-      </div>
+      <Select
+        aria-label={t("aspectRatio")}
+        className="w-full"
+        items={aspectPresets}
+        placeholder={t("chooseAspectRatio")}
+        selectedKeys={aspectPresets.some((preset) => preset.id === aspectId) ? [aspectId] : []}
+        size="sm"
+        variant="bordered"
+        onSelectionChange={(keys) => {
+          if (keys === "all") return;
+          const [id] = Array.from(keys);
+          if (typeof id === "string") onSelectAspect(id);
+        }}
+      >
+        {(preset) => <SelectItem key={preset.id}>{aspectLabel(preset.id, preset.label, preset.ratio)}</SelectItem>}
+      </Select>
       <h3 className="text-sm text-default-500">{t("socialMediaRatios")}</h3>
-      <div className="flex flex-wrap gap-2">
-        {ASPECT_PRESETS.filter((preset) => preset.category === "social").map((preset) => (
-          <Button
-            key={preset.id}
-            size="sm"
-            radius="full"
-            color={preset.id === aspectId ? "primary" : "default"}
-            variant={preset.id === aspectId ? "solid" : "flat"}
-            onPress={() => onSelectAspect(preset.id)}
-          >
-            {preset.label}
-          </Button>
-        ))}
-      </div>
+      <Select
+        aria-label={t("socialMediaRatios")}
+        className="w-full"
+        items={socialPresets}
+        placeholder={t("chooseSocialRatio")}
+        selectedKeys={socialPresets.some((preset) => preset.id === aspectId) ? [aspectId] : []}
+        size="sm"
+        variant="bordered"
+        onSelectionChange={(keys) => {
+          if (keys === "all") return;
+          const [id] = Array.from(keys);
+          if (typeof id === "string") onSelectAspect(id);
+        }}
+      >
+        {(preset) => <SelectItem key={preset.id}>{preset.label}</SelectItem>}
+      </Select>
       <p className="text-xs text-default-500">{t("cropHint")}</p>
       <div onKeyDownCapture={handleStraightenKeyDown}>
         <Slider

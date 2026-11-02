@@ -3,7 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Alert, Button, ButtonGroup, Select, SelectItem, Spinner, Tab, Tabs } from "@heroui/react";
+import {
+  Alert,
+  Button,
+  ButtonGroup,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  SelectItem,
+  Spinner,
+  Tab,
+  Tabs,
+} from "@heroui/react";
 import { useDecodedPhoto } from "@/hooks/useDecodedPhoto";
 import { useEditorState } from "@/hooks/useEditorState";
 import { INTERACTIVE_PREVIEW_MAX_EDGE, PREVIEW_MAX_EDGE } from "@/lib/constants";
@@ -64,6 +78,8 @@ export function Editor() {
     routeMode === "freeform" || routeMode === "print" || routeMode === "composition" ? routeMode : "collage";
   const [tab, setTab] = useState<TabId>("adjust");
   const [isPhotoLibraryOpen, setIsPhotoLibraryOpen] = useState(false);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+  const [exportEntries, setExportEntries] = useState<PhotoEntry[] | null>(null);
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [straightenDraft, setStraightenDraft] = useState<number | null>(null);
   const [exportError, setExportError] = useState("");
@@ -110,6 +126,12 @@ export function Editor() {
     editor.setStraighten(straightenDraft, oriented.width, oriented.height);
     setStraightenDraft(null);
     setTab("border");
+  }
+
+  function confirmCrop(): void {
+    if (straightenDraft !== null) commitStraightenDraft();
+    setIsAdjusting(false);
+    setTab("adjust");
   }
 
   function cancelStraightenDraft(): void {
@@ -164,7 +186,7 @@ export function Editor() {
     editor.removePhoto(id);
   }
 
-  async function handleExport(entries: PhotoEntry[]): Promise<void> {
+  async function handleExport(entries: PhotoEntry[]): Promise<boolean> {
     setExportError("");
     try {
       if (entries.length === 1) {
@@ -180,11 +202,18 @@ export function Editor() {
           customMegapixels,
         );
       }
+      return true;
     } catch {
       setExportError(t("exportError"));
+      return false;
     } finally {
       setExportProgress(null);
     }
+  }
+
+  async function confirmExport(): Promise<void> {
+    if (!exportEntries || isExporting) return;
+    if (await handleExport(exportEntries)) setExportEntries(null);
   }
 
   function renderToolPanel(entry: PhotoEntry) {
@@ -248,7 +277,12 @@ export function Editor() {
 
   function renderStage() {
     if (!activeEntry) {
-      return <p className="text-default-500">{t("startPrompt")}</p>;
+      return (
+        <div className="photo-empty-state">
+          <h2>{t("welcomeToEditor")}</h2>
+          <PhotoUpload onAdd={editor.addPhotos} dropzone />
+        </div>
+      );
     }
     if (decoded.failed) return <Alert color="danger" title={t("oversizedImage")} />;
     if (!oriented || !settings) return <Spinner aria-label={t("loadingPhoto")} />;
@@ -260,6 +294,7 @@ export function Editor() {
           crop={cropPreview ?? activeEntry.edit.crop}
           aspect={aspect}
           onChange={editor.setCrop}
+          onConfirm={confirmCrop}
         />
       );
     }
@@ -325,14 +360,18 @@ export function Editor() {
       {header}
       <div className="workspace-content">
         <main
-          className={isPhotoLibraryOpen ? "editor-layout editor-layout-library" : "editor-layout"}
+          className={
+            isPhotoLibraryOpen
+              ? "editor-layout editor-layout-library"
+              : photos.length === 0
+                ? "editor-layout editor-layout-empty"
+                : "editor-layout"
+          }
           hidden={workspace !== "photo"}
         >
           <aside className="editor-sidebar">
-            <div className="editor-upload">
-              {photos.length === 0 ? (
-                <PhotoUpload onAdd={editor.addPhotos} prominent />
-              ) : (
+            {photos.length > 0 && (
+              <div className="editor-upload">
                 <Button
                   className="editor-library-action"
                   variant="light"
@@ -342,8 +381,8 @@ export function Editor() {
                   <span>{t("photoLibrary")}</span>
                   <span className="editor-library-count">{photos.length}</span>
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
             {activeEntry && (
               <Tabs
                 className="editor-tabs"
@@ -374,54 +413,11 @@ export function Editor() {
             )}
             <div className="editor-tools">{activeEntry && renderToolPanel(activeEntry)}</div>
             <div className="editor-actions">
-              <div className="editor-export-size">
-                <Select
-                  aria-label={t("exportSize")}
-                  className="w-full min-w-0"
-                  label={t("exportSize")}
-                  labelPlacement="outside"
-                  selectedKeys={[exportSize]}
-                  size="sm"
-                  variant="bordered"
-                  isDisabled={isExporting}
-                  onSelectionChange={(keys) => {
-                    if (keys === "all") return;
-                    const [value] = Array.from(keys);
-                    if (typeof value === "string") setExportSize(value as PhotoExportSize);
-                  }}
-                >
-                  <SelectItem key="original">{t("originalSize")}</SelectItem>
-                  <SelectItem key="2048px">{t("longestEdge2048")}</SelectItem>
-                  <SelectItem key="customMp">{t("customSize")}</SelectItem>
-                </Select>
-              </div>
-              {exportSize === "customMp" && (
-                <label className="flex flex-col gap-1 text-sm">
-                  {t("megapixels")}
-                  <div className="flex items-center gap-2">
-                    <input
-                      aria-label={t("megapixels")}
-                      className="h-9 min-w-0 flex-1 rounded-medium border border-default-200 bg-content1 px-3"
-                      type="number"
-                      min="0.1"
-                      max="100"
-                      step="0.1"
-                      value={customMegapixels}
-                      disabled={isExporting}
-                      onChange={(event) => {
-                        const value = event.currentTarget.valueAsNumber;
-                        if (Number.isFinite(value)) setCustomMegapixels(Math.min(100, Math.max(0.1, value)));
-                      }}
-                    />
-                    <span>MP</span>
-                  </div>
-                </label>
-              )}
               <Button
                 color="primary"
                 isDisabled={!activeEntry || isExporting || straightenDraft !== null}
                 startContent={<DownloadIcon />}
-                onPress={() => activeEntry && handleExport([activeEntry])}
+                onPress={() => activeEntry && setExportEntries([activeEntry])}
               >
                 {t("downloadPhoto")}
               </Button>
@@ -430,7 +426,7 @@ export function Editor() {
                   variant="bordered"
                   isDisabled={isExporting || straightenDraft !== null}
                   startContent={<DownloadIcon />}
-                  onPress={() => handleExport(photos)}
+                  onPress={() => setExportEntries(photos)}
                 >
                   {exportProgress
                     ? `${t("exporting")} ${exportProgress.done}/${exportProgress.total}`
@@ -442,10 +438,7 @@ export function Editor() {
                   variant="light"
                   color="danger"
                   isDisabled={isExporting}
-                  onPress={() => {
-                    setStraightenDraft(null);
-                    editor.clearPhotos();
-                  }}
+                  onPress={() => setIsClearConfirmOpen(true)}
                 >
                   {t("resetPhotos")}
                 </Button>
@@ -512,6 +505,107 @@ export function Editor() {
           upload={<PhotoUpload onAdd={editor.addPhotos} />}
           hidden={workspace !== "layout"}
         />
+        <Modal
+          isOpen={exportEntries !== null}
+          isDismissable={!isExporting}
+          isKeyboardDismissDisabled={isExporting}
+          onOpenChange={(isOpen) => {
+            if (!isOpen && !isExporting) setExportEntries(null);
+          }}
+          size="sm"
+        >
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalHeader>{t("exportDialogTitle")}</ModalHeader>
+                <ModalBody>
+                  <Select
+                    aria-label={t("exportSize")}
+                    className="w-full min-w-0"
+                    label={t("exportSize")}
+                    labelPlacement="outside"
+                    selectedKeys={[exportSize]}
+                    size="sm"
+                    variant="bordered"
+                    isDisabled={isExporting}
+                    onSelectionChange={(keys) => {
+                      if (keys === "all") return;
+                      const [value] = Array.from(keys);
+                      if (typeof value === "string") setExportSize(value as PhotoExportSize);
+                    }}
+                  >
+                    <SelectItem key="original">{t("originalSize")}</SelectItem>
+                    <SelectItem key="2048px">{t("longestEdge2048")}</SelectItem>
+                    <SelectItem key="customMp">{t("customSize")}</SelectItem>
+                  </Select>
+                  {exportSize === "customMp" && (
+                    <label className="flex flex-col gap-1 text-sm">
+                      {t("megapixels")}
+                      <div className="flex items-center gap-2">
+                        <input
+                          aria-label={t("megapixels")}
+                          className="h-9 min-w-0 flex-1 rounded-medium border border-default-200 bg-content1 px-3"
+                          type="number"
+                          min="0.1"
+                          max="100"
+                          step="0.1"
+                          value={customMegapixels}
+                          disabled={isExporting}
+                          onChange={(event) => {
+                            const value = event.currentTarget.valueAsNumber;
+                            if (Number.isFinite(value)) setCustomMegapixels(Math.min(100, Math.max(0.1, value)));
+                          }}
+                        />
+                        <span>MP</span>
+                      </div>
+                    </label>
+                  )}
+                  {exportProgress && (
+                    <p aria-live="polite" className="text-sm text-default-500">
+                      {t("exporting")} {exportProgress.done}/{exportProgress.total}
+                    </p>
+                  )}
+                  {exportError && <Alert color="danger" title={exportError} />}
+                </ModalBody>
+                <ModalFooter>
+                  <Button variant="flat" isDisabled={isExporting} onPress={onClose}>
+                    {t("cancel")}
+                  </Button>
+                  <Button color="primary" isDisabled={isExporting} onPress={() => void confirmExport()}>
+                    {t("confirmExport")}
+                  </Button>
+                </ModalFooter>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
+        <Modal isOpen={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen} size="sm">
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalHeader>{t("clearPhotosTitle")}</ModalHeader>
+                <ModalBody>
+                  <Alert color="warning" title={t("clearPhotosMessage")} />
+                </ModalBody>
+                <ModalFooter>
+                  <Button variant="flat" onPress={onClose}>
+                    {t("cancel")}
+                  </Button>
+                  <Button
+                    color="danger"
+                    onPress={() => {
+                      setStraightenDraft(null);
+                      editor.clearPhotos();
+                      onClose();
+                    }}
+                  >
+                    {t("confirmClearPhotos")}
+                  </Button>
+                </ModalFooter>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
       </div>
     </div>
   );

@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { DragEvent } from "react";
 import { Alert, Button, Image, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import { createPhotoEntry, validateImageFile } from "@/lib/photoIO";
 import type { PhotoEntry } from "@/lib/types";
 import { useLanguage } from "./Providers";
+import { UploadIcon } from "./icons";
 import { UploadButton } from "./UploadButton";
 
 interface StagedPhoto {
@@ -14,16 +16,23 @@ interface StagedPhoto {
   selected: boolean;
 }
 
+const SAMPLE_PHOTOS = [
+  { src: "/workspace-mountain.jpg", fileName: "workspace-mountain.jpg", labelKey: "sampleMountain" },
+  { src: "/workspace-lake.jpg", fileName: "workspace-lake.jpg", labelKey: "sampleLake" },
+] as const;
+
 interface PhotoUploadProps {
   onAdd: (entries: PhotoEntry[]) => void;
   prominent?: boolean;
+  dropzone?: boolean;
 }
 
-export function PhotoUpload({ onAdd, prominent = false }: PhotoUploadProps) {
+export function PhotoUpload({ onAdd, prominent = false, dropzone = false }: PhotoUploadProps) {
   const { t } = useLanguage();
   const [stagedPhotos, setStagedPhotos] = useState<StagedPhoto[]>([]);
   const [problems, setProblems] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null);
   const previewUrls = useRef<string[]>([]);
   const selectedCount = stagedPhotos.filter((photo) => photo.selected).length;
@@ -53,6 +62,38 @@ export function PhotoUpload({ onAdd, prominent = false }: PhotoUploadProps) {
     setProblems(found);
   }
 
+  async function importSamplePhoto(sample: (typeof SAMPLE_PHOTOS)[number]): Promise<void> {
+    setIsLoading(true);
+    setProblems([]);
+    try {
+      const response = await fetch(sample.src);
+      if (!response.ok) throw new Error("Sample image could not be loaded");
+      const blob = await response.blob();
+      const file = new File([blob], sample.fileName, { type: blob.type || "image/jpeg" });
+      onAdd([await createPhotoEntry(file)]);
+    } catch {
+      setProblems([`${t(sample.labelKey)}: ${t("cannotOpen")}`]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>): void {
+    event.preventDefault();
+    if (!isLoading && event.dataTransfer.types.includes("Files")) setIsDragging(true);
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLDivElement>): void {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+    setIsDragging(false);
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>): void {
+    event.preventDefault();
+    setIsDragging(false);
+    if (!isLoading) void handleFiles(Array.from(event.dataTransfer.files));
+  }
+
   async function importSelectedPhotos(): Promise<void> {
     const selected = stagedPhotos.filter((photo) => photo.selected);
     if (selected.length === 0) return;
@@ -78,15 +119,53 @@ export function PhotoUpload({ onAdd, prominent = false }: PhotoUploadProps) {
   }
 
   return (
-    <div className={prominent ? "photo-upload-editor" : "flex flex-col gap-2"}>
+    <div
+      className={
+        dropzone
+          ? `photo-dropzone${isDragging ? " photo-dropzone-active" : ""}`
+          : prominent
+            ? "photo-upload-editor"
+            : "flex flex-col gap-2"
+      }
+      role={dropzone ? "region" : undefined}
+      aria-label={dropzone ? t("dropPhotosHere") : undefined}
+      onDragOver={dropzone ? handleDragOver : undefined}
+      onDragLeave={dropzone ? handleDragLeave : undefined}
+      onDrop={dropzone ? handleDrop : undefined}
+    >
+      {dropzone && (
+        <div className="photo-dropzone-prompt">
+          <UploadIcon />
+          <p>{t("dropPhotosHere")}</p>
+          <span>{t("orSelectFromComputer")}</span>
+        </div>
+      )}
       <UploadButton
         multiple
-        label={isLoading ? t("loading") : t("upload")}
+        label={isLoading ? t("loading") : dropzone ? t("selectPhotoButton") : t("upload")}
         isDisabled={isLoading}
-        isPrimary={prominent}
-        buttonClassName={prominent ? "editor-upload-primary" : undefined}
+        isPrimary={prominent || dropzone}
+        buttonClassName={dropzone ? "photo-dropzone-action" : prominent ? "editor-upload-primary" : undefined}
         onFiles={handleFiles}
       />
+      {dropzone && (
+        <div className="photo-samples">
+          <div className="photo-sample-list">
+            {SAMPLE_PHOTOS.map((sample) => (
+              <Button
+                key={sample.fileName}
+                isIconOnly
+                aria-label={t(sample.labelKey)}
+                isDisabled={isLoading}
+                onPress={() => void importSamplePhoto(sample)}
+              >
+                <Image removeWrapper radius="none" src={sample.src} alt="" />
+              </Button>
+            ))}
+          </div>
+          <p>{t("samplePhotosPrompt")}</p>
+        </div>
+      )}
       {isLoading && importProgress && (
         <p aria-live="polite" className="text-xs text-default-500">
           {t("importProgress")

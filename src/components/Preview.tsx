@@ -21,9 +21,10 @@ export function Preview({ source, settings, exif, captionOverrides }: PreviewPro
     if (!target) return undefined;
     let cancelled = false;
     const frame = requestAnimationFrame(() => {
-      void Promise.all([document.fonts.ready, prepareBrandLogos()]).then(() => {
+      void Promise.all([document.fonts.ready, prepareBrandLogos()]).then(async () => {
         if (cancelled) return;
-        const rendered = renderEdit(source, settings, exif, captionOverrides);
+        const rendered = await renderEdit(source, settings, exif, captionOverrides);
+        if (cancelled) return;
         target.width = rendered.width;
         target.height = rendered.height;
         target.getContext("2d")?.drawImage(rendered, 0, 0);

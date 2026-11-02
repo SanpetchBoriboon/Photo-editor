@@ -140,7 +140,7 @@ async function renderPhotoBlob(
   try {
     const settings = toEditSettings(entry.edit, shared);
     const oriented = createOrientedCanvas(bitmap, settings.orientation, Infinity);
-    const rendered = renderEdit(oriented, settings, entry.exif, entry.captionOverrides);
+    const rendered = await renderEdit(oriented, settings, entry.exif, entry.captionOverrides);
     return await canvasToBlob(flatten(resizeForExport(rendered, exportSize, customMegapixels)));
   } finally {
     bitmap.close();

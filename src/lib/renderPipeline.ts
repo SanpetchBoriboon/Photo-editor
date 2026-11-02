@@ -43,14 +43,14 @@ function cropCanvas(source: HTMLCanvasElement, crop: CropRect): HTMLCanvasElemen
 }
 
 // Pipeline: crop -> color adjustments -> border and captions.
-export function renderEdit(
+export async function renderEdit(
   oriented: HTMLCanvasElement,
   settings: EditSettings,
   exif: ExifData,
   captionOverrides: CaptionOverrides,
-): HTMLCanvasElement {
+): Promise<HTMLCanvasElement> {
   const cropped = cropCanvas(oriented, settings.crop);
-  applyAdjustments(cropped, settings.adjustments);
+  await applyAdjustments(cropped, settings.adjustments);
   return addBorder(cropped, {
     border: settings.border,
     caption: settings.caption,

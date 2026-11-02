@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { PointerEvent } from "react";
+import type { KeyboardEvent, PointerEvent } from "react";
 import { moveCrop, resizeCrop } from "@/lib/cropMath";
 import type { CropHandle, CropRect } from "@/lib/types";
 import { useCanvasMirror } from "@/hooks/useCanvasMirror";
+import { useLanguage } from "./Providers";
 
 const CORNER_HANDLES: readonly CropHandle[] = ["nw", "ne", "sw", "se"];
 const EDGE_HANDLES: readonly CropHandle[] = ["n", "s", "e", "w"];
@@ -23,6 +24,7 @@ interface CropToolProps {
   // Normalized width / height lock, or null for free cropping.
   aspect: number | null;
   onChange: (crop: CropRect) => void;
+  onConfirm: () => void;
 }
 
 function handleStyle(handle: CropHandle, crop: CropRect) {
@@ -31,9 +33,16 @@ function handleStyle(handle: CropHandle, crop: CropRect) {
   return { left: `${(crop.x + horizontal) * PERCENT}%`, top: `${(crop.y + vertical) * PERCENT}%` };
 }
 
-export function CropTool({ source, crop, aspect, onChange }: CropToolProps) {
+export function CropTool({ source, crop, aspect, onChange, onConfirm }: CropToolProps) {
+  const { t } = useLanguage();
   const [drag, setDrag] = useState<DragState | null>(null);
   const canvasRef = useCanvasMirror(source);
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+    if (event.key !== "Enter" || event.defaultPrevented) return;
+    event.preventDefault();
+    onConfirm();
+  }
 
   function beginDrag(handle: CropHandle | "move") {
     return (event: PointerEvent<HTMLElement>) => {
@@ -67,7 +76,14 @@ export function CropTool({ source, crop, aspect, onChange }: CropToolProps) {
   const visibleHandles = aspect === null ? [...CORNER_HANDLES, ...EDGE_HANDLES] : CORNER_HANDLES;
 
   return (
-    <div className="crop-stage">
+    <div
+      className="crop-stage"
+      role="group"
+      aria-label={t("cropPreview")}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      onPointerDownCapture={(event) => event.currentTarget.focus()}
+    >
       <div className="crop-clip">
         <canvas ref={canvasRef} className="crop-canvas" />
         <div
