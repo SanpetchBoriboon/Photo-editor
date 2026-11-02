@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Switch } from "@heroui/react";
+import { Button, Select, SelectItem, Switch } from "@heroui/react";
 import { BORDER_PERCENT_MAX, BORDER_PERCENT_MIN, CANVAS_ASPECT_PRESETS, DEFAULT_BORDER } from "@/lib/constants";
 import type { BorderSettings } from "@/lib/types";
 import { useLanguage } from "./Providers";
@@ -17,6 +17,10 @@ export function BorderPanel({ border, onChange }: BorderPanelProps) {
     { label: t("white"), value: "#ffffff" },
     { label: t("black"), value: "#000000" },
   ];
+  const aspectOptions = [
+    { key: "photo", label: t("matchPhoto") },
+    ...CANVAS_ASPECT_PRESETS.map((preset) => ({ key: String(preset.ratio), label: preset.label })),
+  ];
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-sm text-default-500">{t("borderForAll")}</h2>
@@ -30,26 +34,26 @@ export function BorderPanel({ border, onChange }: BorderPanelProps) {
         max={BORDER_PERCENT_MAX}
         onChange={(percent) => onChange({ ...border, percent })}
       />
-      <label className="flex flex-col gap-2 text-sm">
-        {t("canvasAspectRatio")}
-        <select
-          className="h-9 rounded-medium border border-default-200 bg-content1 px-3"
-          value={border.canvasAspect === null ? "photo" : String(border.canvasAspect)}
-          onChange={(event) =>
-            onChange({
-              ...border,
-              canvasAspect: event.target.value === "photo" ? null : Number(event.target.value),
-            })
-          }
-        >
-          <option value="photo">{t("matchPhoto")}</option>
-          {CANVAS_ASPECT_PRESETS.map((preset) => (
-            <option key={preset.label} value={String(preset.ratio)}>
-              {preset.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Select
+        className="w-full"
+        items={aspectOptions}
+        label={t("canvasAspectRatio")}
+        labelPlacement="outside"
+        selectedKeys={[border.canvasAspect === null ? "photo" : String(border.canvasAspect)]}
+        size="sm"
+        variant="bordered"
+        onSelectionChange={(keys) => {
+          if (keys === "all") return;
+          const [value] = Array.from(keys);
+          if (typeof value !== "string") return;
+          onChange({
+            ...border,
+            canvasAspect: value === "photo" ? null : Number(value),
+          });
+        }}
+      >
+        {(option) => <SelectItem key={option.key}>{option.label}</SelectItem>}
+      </Select>
       <div className="flex items-center gap-2">
         <label htmlFor="border-color" className="text-sm">
           {t("borderColor")}

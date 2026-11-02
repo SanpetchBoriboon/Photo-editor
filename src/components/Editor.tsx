@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Alert, Button, ButtonGroup, Spinner, Tab, Tabs } from "@heroui/react";
+import { Alert, Button, ButtonGroup, Select, SelectItem, Spinner, Tab, Tabs } from "@heroui/react";
 import { useDecodedPhoto } from "@/hooks/useDecodedPhoto";
 import { useEditorState } from "@/hooks/useEditorState";
 import { INTERACTIVE_PREVIEW_MAX_EDGE, PREVIEW_MAX_EDGE } from "@/lib/constants";
@@ -374,19 +374,27 @@ export function Editor() {
             )}
             <div className="editor-tools">{activeEntry && renderToolPanel(activeEntry)}</div>
             <div className="editor-actions">
-              <label className="flex flex-col gap-1 text-sm">
-                {t("exportSize")}
-                <select
-                  className="h-9 rounded-medium border border-default-200 bg-content1 px-3"
-                  value={exportSize}
-                  disabled={isExporting}
-                  onChange={(event) => setExportSize(event.target.value as PhotoExportSize)}
+              <div className="editor-export-size">
+                <Select
+                  aria-label={t("exportSize")}
+                  className="w-full min-w-0"
+                  label={t("exportSize")}
+                  labelPlacement="outside"
+                  selectedKeys={[exportSize]}
+                  size="sm"
+                  variant="bordered"
+                  isDisabled={isExporting}
+                  onSelectionChange={(keys) => {
+                    if (keys === "all") return;
+                    const [value] = Array.from(keys);
+                    if (typeof value === "string") setExportSize(value as PhotoExportSize);
+                  }}
                 >
-                  <option value="original">{t("originalSize")}</option>
-                  <option value="2048px">{t("longestEdge2048")}</option>
-                  <option value="customMp">{t("customSize")}</option>
-                </select>
-              </label>
+                  <SelectItem key="original">{t("originalSize")}</SelectItem>
+                  <SelectItem key="2048px">{t("longestEdge2048")}</SelectItem>
+                  <SelectItem key="customMp">{t("customSize")}</SelectItem>
+                </Select>
+              </div>
               {exportSize === "customMp" && (
                 <label className="flex flex-col gap-1 text-sm">
                   {t("megapixels")}

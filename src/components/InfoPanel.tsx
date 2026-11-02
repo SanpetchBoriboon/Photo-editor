@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Alert, Button, Checkbox, Input, Radio, RadioGroup } from "@heroui/react";
+import { Alert, Button, Checkbox, Input, Radio, RadioGroup, Select, SelectItem } from "@heroui/react";
 import { CREDIT_TEXT_MAX_LENGTH } from "@/lib/constants";
 import { CAPTION_FIELDS, getCaptionTexts, getExifTexts } from "@/lib/caption";
 import { findLensSuggestion, getLensBrands } from "@/lib/lensCatalog";
@@ -48,6 +48,8 @@ export function InfoPanel({
   const selectedLens = findLensSuggestion(texts.make, captionOverrides.lens ?? "");
   const [selectedLensBrand, setSelectedLensBrand] = useState(selectedLens?.brand ?? "");
   const activeLensBrand = lensBrands.some(({ name }) => name === selectedLensBrand) ? selectedLensBrand : "";
+  const activeLensModels =
+    lensBrands.find(({ name }) => name === activeLensBrand)?.models.map((model) => ({ model })) ?? [];
   const fieldLabels: Record<CaptionField, string> = {
     make: t("make"),
     model: t("model"),
@@ -100,43 +102,42 @@ export function InfoPanel({
               <>
                 {field === "lens" && lensBrands.length > 0 && (
                   <>
-                    <select
+                    <Select
                       aria-label={t("lensBrand")}
-                      className="h-9 rounded-medium border border-default-200 bg-content1 px-3 text-sm"
-                      value={lensBrands.some(({ name }) => name === selectedLensBrand) ? selectedLensBrand : ""}
-                      onChange={(event) => {
-                        setSelectedLensBrand(event.target.value);
+                      className="w-full"
+                      placeholder={t("chooseLensBrand")}
+                      selectedKeys={activeLensBrand ? [activeLensBrand] : []}
+                      size="sm"
+                      variant="bordered"
+                      onSelectionChange={(keys) => {
+                        if (keys === "all") return;
+                        const [brand] = Array.from(keys);
+                        if (typeof brand !== "string") return;
+                        setSelectedLensBrand(brand);
                         onCaptionOverrideChange("lens", "");
                       }}
                     >
-                      <option value="">{t("chooseLensBrand")}</option>
                       {lensBrands.map(({ name }) => (
-                        <option key={name} value={name}>
-                          {name}
-                        </option>
+                        <SelectItem key={name}>{name}</SelectItem>
                       ))}
-                    </select>
+                    </Select>
                     {activeLensBrand && (
-                      <select
+                      <Select
                         aria-label={t("lensModel")}
-                        className="h-9 rounded-medium border border-default-200 bg-content1 px-3 text-sm"
-                        value={selectedLens?.brand === activeLensBrand ? selectedLens.model : ""}
-                        onChange={(event) =>
-                          onCaptionOverrideChange(
-                            "lens",
-                            event.target.value ? `${activeLensBrand} ${event.target.value}` : "",
-                          )
-                        }
+                        className="w-full"
+                        items={activeLensModels}
+                        placeholder={t("chooseLensModel")}
+                        selectedKeys={selectedLens?.brand === activeLensBrand ? [selectedLens.model] : []}
+                        size="sm"
+                        variant="bordered"
+                        onSelectionChange={(keys) => {
+                          if (keys === "all") return;
+                          const [model] = Array.from(keys);
+                          if (typeof model === "string") onCaptionOverrideChange("lens", `${activeLensBrand} ${model}`);
+                        }}
                       >
-                        <option value="">{t("chooseLensModel")}</option>
-                        {lensBrands
-                          .find(({ name }) => name === activeLensBrand)
-                          ?.models.map((model) => (
-                            <option key={model} value={model}>
-                              {model}
-                            </option>
-                          ))}
-                      </select>
+                        {(item) => <SelectItem key={item.model}>{item.model}</SelectItem>}
+                      </Select>
                     )}
                   </>
                 )}

@@ -7,3 +7,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## UI Components
+
+- Use `@heroui/react` (HeroUI, formerly NextUI) as the default for visible UI components and controls. Check the installed package version and available components before building a UI element.
+- Prefer HeroUI components over native visible controls or custom UI when HeroUI provides a suitable option.
+- If HeroUI has no suitable component, or adapting it would be difficult or compromise the experience, ask the user before implementing a non-HeroUI alternative. Explain the limitation and proposed alternative.
+- Native elements may be used for browser plumbing that requires them, such as a hidden file input or canvas, while keeping the visible control in HeroUI.

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import Image from "next/image";
-import { Alert, Button, Spinner } from "@heroui/react";
+import { Alert, Button, Select, SelectItem, Spinner } from "@heroui/react";
 import { prepareBrandLogos } from "@/lib/brandLogos";
 import { decodeImage } from "@/lib/photoIO";
 import { createOrientedCanvas, renderEdit } from "@/lib/renderPipeline";
@@ -309,42 +309,44 @@ export function LayoutEditor({
         <div className="layout-controls" inert={exporting}>
           <fieldset>
             <legend>{mode === "print" ? t("paperSize") : t("canvasSize")}</legend>
-            <label className="layout-field">
-              <span>{t("preset")}</span>
-              <select
-                aria-label={t("preset")}
-                value=""
-                onChange={(event) => {
-                  const value = event.target.value;
-                  if (value in PAPER_SIZES) {
-                    const paper = PAPER_SIZES[value as keyof typeof PAPER_SIZES];
-                    updateSettings({ width: paper.width, height: paper.height });
-                  } else {
-                    const [width, height] = value.split("x").map(Number);
-                    if (width && height) updateSettings({ width, height });
-                  }
-                }}
-              >
-                <option value="" disabled>
-                  {settings.width} × {settings.height} px{mode === "print" ? " · 300 dpi" : ""}
-                </option>
-                {mode === "print" ? (
-                  <>
-                    <option value="a4">A4</option>
-                    <option value="a5">A5</option>
-                    <option value="postcard">4 × 6 in</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="2400x2400">1:1</option>
-                    <option value="2400x3000">4:5</option>
-                    <option value="2400x1600">3:2</option>
-                    <option value="1920x1080">16:9</option>
-                    <option value="1080x1920">9:16</option>
-                  </>
-                )}
-              </select>
-            </label>
+            <Select
+              aria-label={t("preset")}
+              className="w-full"
+              label={t("preset")}
+              labelPlacement="outside"
+              placeholder={`${settings.width} × ${settings.height} px${mode === "print" ? " · 300 dpi" : ""}`}
+              selectedKeys={[]}
+              size="sm"
+              variant="bordered"
+              onSelectionChange={(keys) => {
+                if (keys === "all") return;
+                const [selected] = Array.from(keys);
+                if (typeof selected !== "string") return;
+                if (selected in PAPER_SIZES) {
+                  const paper = PAPER_SIZES[selected as keyof typeof PAPER_SIZES];
+                  updateSettings({ width: paper.width, height: paper.height });
+                } else {
+                  const [width, height] = selected.split("x").map(Number);
+                  if (width && height) updateSettings({ width, height });
+                }
+              }}
+            >
+              {mode === "print" ? (
+                <>
+                  <SelectItem key="a4">A4</SelectItem>
+                  <SelectItem key="a5">A5</SelectItem>
+                  <SelectItem key="postcard">4 × 6 in</SelectItem>
+                </>
+              ) : (
+                <>
+                  <SelectItem key="2400x2400">1:1</SelectItem>
+                  <SelectItem key="2400x3000">4:5</SelectItem>
+                  <SelectItem key="2400x1600">3:2</SelectItem>
+                  <SelectItem key="1920x1080">16:9</SelectItem>
+                  <SelectItem key="1080x1920">9:16</SelectItem>
+                </>
+              )}
+            </Select>
             <div className="layout-field-row">
               <NumberField
                 label={`${t("width")} (px)`}
@@ -437,16 +439,22 @@ export function LayoutEditor({
                 onChange={(event) => updateSettings({ background: event.target.value })}
               />
             </label>
-            <label className="layout-field">
-              <span>{t("photoFit")}</span>
-              <select
-                value={settings.fit}
-                onChange={(event) => updateSettings({ fit: event.target.value as LayoutSettings["fit"] })}
-              >
-                <option value="cover">{t("fillFrame")}</option>
-                <option value="contain">{t("fitFrame")}</option>
-              </select>
-            </label>
+            <Select
+              className="w-full"
+              label={t("photoFit")}
+              labelPlacement="outside"
+              selectedKeys={[settings.fit]}
+              size="sm"
+              variant="bordered"
+              onSelectionChange={(keys) => {
+                if (keys === "all") return;
+                const [fit] = Array.from(keys);
+                if (fit === "cover" || fit === "contain") updateSettings({ fit });
+              }}
+            >
+              <SelectItem key="cover">{t("fillFrame")}</SelectItem>
+              <SelectItem key="contain">{t("fitFrame")}</SelectItem>
+            </Select>
           </fieldset>
           {mode === "composition" && (
             <fieldset>
@@ -487,19 +495,29 @@ export function LayoutEditor({
           {frames.length > 0 && mode !== "composition" && (
             <fieldset>
               <legend>{mode === "freeform" ? t("layers") : t("photoOrder")}</legend>
-              <label className="layout-field">
-                <span>{t("selectedPhoto")}</span>
-                <select value={selectedFrame?.id ?? ""} onChange={(event) => setSelectedId(event.target.value)}>
-                  <option value="" disabled>
-                    {t("selectedPhoto")}
-                  </option>
-                  {frames.map((frame, index) => (
-                    <option key={frame.id} value={frame.id}>
-                      {index + 1}. {photos.find((photo) => photo.id === frame.id)?.file.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <Select
+                className="w-full"
+                label={t("selectedPhoto")}
+                labelPlacement="outside"
+                placeholder={t("selectedPhoto")}
+                selectedKeys={selectedFrame ? [selectedFrame.id] : []}
+                size="sm"
+                variant="bordered"
+                onSelectionChange={(keys) => {
+                  if (keys === "all") return;
+                  const [id] = Array.from(keys);
+                  if (typeof id === "string") setSelectedId(id);
+                }}
+              >
+                {frames.map((frame, index) => (
+                  <SelectItem
+                    key={frame.id}
+                    textValue={`${index + 1}. ${photos.find((photo) => photo.id === frame.id)?.file.name}`}
+                  >
+                    {index + 1}. {photos.find((photo) => photo.id === frame.id)?.file.name}
+                  </SelectItem>
+                ))}
+              </Select>
               <div className="layout-layer-actions">
                 <Button
                   isIconOnly
