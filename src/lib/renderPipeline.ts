@@ -54,10 +54,11 @@ export async function renderEdit(
   settings: EditSettings,
   exif: ExifData,
   captionOverrides: CaptionOverrides,
+  cpuPreviewMaxEdge?: number,
 ): Promise<HTMLCanvasElement> {
   const cropped = cropCanvas(oriented, settings.crop);
-  await applyAdjustments(cropped, settings.adjustments);
-  return addBorder(cropped, {
+  const adjusted = await applyAdjustments(cropped, settings.adjustments, cpuPreviewMaxEdge);
+  return addBorder(adjusted, {
     border: settings.border,
     caption: settings.caption,
     captionOverrides,

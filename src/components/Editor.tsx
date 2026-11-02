@@ -20,7 +20,7 @@ import {
 } from "@heroui/react";
 import { useDecodedPhoto } from "@/hooks/useDecodedPhoto";
 import { useEditorState } from "@/hooks/useEditorState";
-import { INTERACTIVE_PREVIEW_SCALE, MAX_PREVIEW_EDGE, MIN_INTERACTIVE_PREVIEW_EDGE } from "@/lib/constants";
+import { MAX_PREVIEW_EDGE } from "@/lib/constants";
 import { getBorderExpansionFactor } from "@/lib/borderRenderer";
 import { getCaptionTexts, hasMissingCaptionFields } from "@/lib/caption";
 import { adjustCropForStraighten, resolveLockedAspect } from "@/lib/cropMath";
@@ -81,7 +81,6 @@ export function Editor() {
   const [isPhotoLibraryOpen, setIsPhotoLibraryOpen] = useState(false);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [exportEntries, setExportEntries] = useState<PhotoEntry[] | null>(null);
-  const [isAdjusting, setIsAdjusting] = useState(false);
   const [straightenDraft, setStraightenDraft] = useState<number | null>(null);
   const [exportError, setExportError] = useState("");
   const [exportProgress, setExportProgress] = useState<{ done: number; total: number } | null>(null);
@@ -181,14 +180,8 @@ export function Editor() {
   const displayTargetEdge =
     displayCanvasLongEdge > 0 ? Math.round(displayCanvasLongEdge * devicePixelRatio) : MAX_PREVIEW_EDGE;
   const fullTarget = Math.min(MAX_PREVIEW_EDGE, sourceLongEdge, displayTargetEdge);
-  const dragTarget = Math.min(
-    sourceLongEdge,
-    MAX_PREVIEW_EDGE,
-    Math.max(MIN_INTERACTIVE_PREVIEW_EDGE, Math.round(fullTarget * INTERACTIVE_PREVIEW_SCALE)),
-  );
   const fullPreviewEdge = Math.min(sourceLongEdge, MAX_PREVIEW_EDGE, Math.floor(fullTarget / borderExpansionFactor));
-  const dragPreviewEdge = Math.min(sourceLongEdge, MAX_PREVIEW_EDGE, Math.floor(dragTarget / borderExpansionFactor));
-  const previewMaxEdge = isAdjusting ? dragPreviewEdge : fullPreviewEdge;
+  const previewMaxEdge = fullPreviewEdge;
 
   const oriented = useMemo(
     () =>
@@ -218,7 +211,6 @@ export function Editor() {
 
   function confirmCrop(): void {
     if (straightenDraft !== null) commitStraightenDraft();
-    setIsAdjusting(false);
     setTab("adjust");
   }
 
@@ -331,14 +323,7 @@ export function Editor() {
           />
         );
       case "adjust":
-        return (
-          <AdjustPanel
-            adjustments={entry.edit.adjustments}
-            onChange={editor.setAdjustments}
-            onInteractionStart={() => setIsAdjusting(true)}
-            onInteractionEnd={() => setIsAdjusting(false)}
-          />
-        );
+        return <AdjustPanel adjustments={entry.edit.adjustments} onChange={editor.setAdjustments} />;
       case "border":
         return <BorderPanel border={shared.border} onChange={editor.setBorder} />;
       case "info":
@@ -428,13 +413,7 @@ export function Editor() {
       {workspaceLinks.length > 1 && (
         <nav className="workspace-nav" aria-label={t("workspaceMode")}>
           {workspaceLinks.map(({ href, labelKey }) => (
-            <Link
-              key={href}
-              href={href}
-              scroll={false}
-              aria-current={pathname === href ? "page" : undefined}
-              onNavigate={() => setIsAdjusting(false)}
-            >
+            <Link key={href} href={href} scroll={false} aria-current={pathname === href ? "page" : undefined}>
               {t(labelKey)}
             </Link>
           ))}
@@ -479,7 +458,6 @@ export function Editor() {
                 selectedKey={tab}
                 onSelectionChange={(key) => {
                   if (key === "crop" || key === "adjust" || key === "border" || key === "info") {
-                    setIsAdjusting(false);
                     if (key !== "crop") setStraightenDraft(null);
                     setTab(key);
                   }

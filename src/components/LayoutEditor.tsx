@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import Image from "next/image";
 import { Alert, Button, Select, SelectItem, Spinner } from "@heroui/react";
+import { MAX_CPU_PREVIEW_EDGE } from "@/lib/constants";
 import { prepareBrandLogos } from "@/lib/brandLogos";
 import { decodeImage } from "@/lib/photoIO";
 import { createOrientedCanvas, renderEdit } from "@/lib/renderPipeline";
@@ -44,7 +45,12 @@ function createDocument(mode: LayoutMode): LayoutDocument {
   };
 }
 
-async function preparePhoto(entry: PhotoEntry, shared: SharedSettings, maxEdge: number): Promise<HTMLCanvasElement> {
+async function preparePhoto(
+  entry: PhotoEntry,
+  shared: SharedSettings,
+  maxEdge: number,
+  cpuPreviewMaxEdge?: number,
+): Promise<HTMLCanvasElement> {
   const [, bitmap] = await Promise.all([prepareBrandLogos(), decodeImage(entry.file)]);
   try {
     const settings = toEditSettings(entry.edit, shared);
@@ -53,6 +59,7 @@ async function preparePhoto(entry: PhotoEntry, shared: SharedSettings, maxEdge: 
       settings,
       entry.exif,
       entry.captionOverrides,
+      cpuPreviewMaxEdge,
     );
   } finally {
     bitmap.close();
@@ -165,7 +172,7 @@ export function LayoutEditor({
       const sources = new Map<string, HTMLCanvasElement>();
       try {
         for (const photo of photos) {
-          const source = await preparePhoto(photo, shared, 1200);
+          const source = await preparePhoto(photo, shared, 1200, MAX_CPU_PREVIEW_EDGE);
           if (cancelled) return;
           sources.set(photo.id, source);
         }

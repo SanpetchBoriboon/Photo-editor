@@ -23,11 +23,9 @@ const ADJUSTMENT_FORMAT_OPTIONS: Intl.NumberFormatOptions = { maximumFractionDig
 interface AdjustPanelProps {
   adjustments: Adjustments;
   onChange: (adjustments: Adjustments) => void;
-  onInteractionStart: (key: AdjustmentKey) => void;
-  onInteractionEnd: () => void;
 }
 
-export function AdjustPanel({ adjustments, onChange, onInteractionStart, onInteractionEnd }: AdjustPanelProps) {
+export function AdjustPanel({ adjustments, onChange }: AdjustPanelProps) {
   const { t } = useLanguage();
   function update(key: AdjustmentKey, value: number): void {
     onChange({ ...adjustments, [key]: value });
@@ -47,11 +45,7 @@ export function AdjustPanel({ adjustments, onChange, onInteractionStart, onInter
             max={isExposure ? EXPOSURE_RANGE.max : ADJUSTMENT_RANGE.max}
             step={isExposure ? EXPOSURE_RANGE.step : ADJUSTMENT_RANGE.step}
             formatOptions={isExposure ? EXPOSURE_FORMAT_OPTIONS : ADJUSTMENT_FORMAT_OPTIONS}
-            onChange={(value) => {
-              onInteractionStart(key);
-              update(key, value);
-            }}
-            onChangeEnd={onInteractionEnd}
+            onChange={(value) => update(key, value)}
           />
         );
       })}

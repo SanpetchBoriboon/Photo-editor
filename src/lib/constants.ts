@@ -19,8 +19,7 @@ export const THUMBNAIL_QUALITY = 0.7;
 export const ALLOWED_IMAGE_TYPES: readonly string[] = ["image/jpeg", "image/png", "image/webp"];
 
 export const MAX_PREVIEW_EDGE = 2560;
-export const INTERACTIVE_PREVIEW_SCALE = 0.6;
-export const MIN_INTERACTIVE_PREVIEW_EDGE = 800;
+export const MAX_CPU_PREVIEW_EDGE = 1600;
 export const EXPORT_MIME_TYPE = "image/jpeg";
 export const EXPORT_QUALITY = 0.95;
 export const EXPORT_BACKGROUND = "#ffffff";
