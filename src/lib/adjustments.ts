@@ -1,5 +1,6 @@
 import { DEFAULT_ADJUSTMENTS } from "./constants";
 import { applyWebGPUAdjustments } from "./webGpuAdjustments";
+import type { WebGPUAdjustmentResult } from "./webGpuAdjustments";
 import type { Adjustments } from "./types";
 
 const CHANNEL_MAX = 255;
@@ -17,6 +18,8 @@ const LUMA_GREEN = 0.587;
 const LUMA_BLUE = 0.114;
 const CONTRAST_PIVOT = 0.5;
 const PIXEL_STRIDE = 4;
+
+let lastLoggedRendererState: string | null = null;
 
 interface PixelParams {
   exposureLut: Float32Array;
@@ -114,9 +117,19 @@ function isNeutral(adjustments: Adjustments): boolean {
 
 export async function applyAdjustments(canvas: HTMLCanvasElement, adjustments: Adjustments): Promise<void> {
   if (isNeutral(adjustments)) return;
+  let result: WebGPUAdjustmentResult;
   try {
-    if (await applyWebGPUAdjustments(canvas, adjustments)) return;
-  } catch {}
+    result = await applyWebGPUAdjustments(canvas, adjustments);
+  } catch {
+    result = { renderer: "cpu", reason: "runtime error" };
+  }
+  const stateKey = result.renderer === "gpu" ? "gpu" : `cpu:${result.reason}`;
+  if (stateKey !== lastLoggedRendererState) {
+    lastLoggedRendererState = stateKey;
+    if (result.renderer === "gpu") console.info("[renderer] gpu");
+    else console.warn("[renderer] cpu", result.reason);
+  }
+  if (result.renderer === "gpu") return;
 
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) return;

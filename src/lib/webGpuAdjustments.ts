@@ -73,22 +73,30 @@ interface WebGPUState {
   pipeline: GPUComputePipeline;
 }
 
-let statePromise: Promise<WebGPUState | null> | null = null;
+export type WebGPUFallbackReason = "no gpu" | "no adapter" | "size limit" | "runtime error";
 
-function getWebGPUState(): Promise<WebGPUState | null> {
+export type WebGPUAdjustmentResult = { renderer: "gpu" } | { renderer: "cpu"; reason: WebGPUFallbackReason };
+
+type WebGPUStateResult = { state: WebGPUState } | { reason: WebGPUFallbackReason };
+
+let statePromise: Promise<WebGPUStateResult> | null = null;
+
+function getWebGPUState(): Promise<WebGPUStateResult> {
   if (!statePromise) {
-    statePromise = (async () => {
-      if (!navigator.gpu) return null;
+    const pendingState = (async (): Promise<WebGPUStateResult> => {
+      if (!navigator.gpu) return { reason: "no gpu" };
       const adapter = await navigator.gpu.requestAdapter();
-      if (!adapter) return null;
+      if (!adapter) return { reason: "no adapter" };
       const device = await adapter.requestDevice();
       const shaderModule = device.createShaderModule({ code: SHADER_CODE });
       const pipeline = device.createComputePipeline({
         layout: "auto",
         compute: { module: shaderModule, entryPoint: "main" },
       });
-      return { device, pipeline };
-    })().catch(() => null);
+      return { state: { device, pipeline } };
+    })().catch((): WebGPUStateResult => ({ reason: "runtime error" }));
+    statePromise = pendingState;
+    return pendingState;
   }
   return statePromise;
 }
@@ -117,57 +125,65 @@ function packParams(adjustments: Adjustments, width: number, height: number): Fl
   ]);
 }
 
-export async function applyWebGPUAdjustments(canvas: HTMLCanvasElement, adjustments: Adjustments): Promise<boolean> {
-  const state = await getWebGPUState();
-  if (!state) return false;
+export async function applyWebGPUAdjustments(
+  canvas: HTMLCanvasElement,
+  adjustments: Adjustments,
+): Promise<WebGPUAdjustmentResult> {
+  const stateResult = await getWebGPUState();
+  if ("reason" in stateResult) return { renderer: "cpu", reason: stateResult.reason };
+  const { device, pipeline } = stateResult.state;
 
   const { width, height } = canvas;
-  if (width > state.device.limits.maxTextureDimension2D || height > state.device.limits.maxTextureDimension2D) {
-    return false;
+  if (width > device.limits.maxTextureDimension2D || height > device.limits.maxTextureDimension2D) {
+    return { renderer: "cpu", reason: "size limit" };
   }
 
   const context = canvas.getContext("2d", { willReadFrequently: true });
-  if (!context) return false;
+  if (!context) return { renderer: "cpu", reason: "runtime error" };
 
-  const inputTexture = state.device.createTexture({
-    size: { width, height },
-    format: "rgba8unorm",
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-  });
-  const outputTexture = state.device.createTexture({
-    size: { width, height },
-    format: "rgba8unorm",
-    usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC,
-  });
+  let inputTexture: GPUTexture | undefined;
+  let outputTexture: GPUTexture | undefined;
+  let uniformBuffer: GPUBuffer | undefined;
+  let readbackBuffer: GPUBuffer | undefined;
   const uniformData = packParams(adjustments, width, height);
-  const uniformBuffer = state.device.createBuffer({
-    size: uniformData.byteLength,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-  const bytesPerRow = bytesPerRowFor(width);
-  const readbackBuffer = state.device.createBuffer({
-    size: bytesPerRow * height,
-    usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
-  });
 
   try {
-    state.device.queue.copyExternalImageToTexture(
+    inputTexture = device.createTexture({
+      size: { width, height },
+      format: "rgba8unorm",
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    outputTexture = device.createTexture({
+      size: { width, height },
+      format: "rgba8unorm",
+      usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC,
+    });
+    uniformBuffer = device.createBuffer({
+      size: uniformData.byteLength,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    const bytesPerRow = bytesPerRowFor(width);
+    readbackBuffer = device.createBuffer({
+      size: bytesPerRow * height,
+      usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.copyExternalImageToTexture(
       { source: canvas },
       { texture: inputTexture, colorSpace: "srgb" },
       { width, height },
     );
-    state.device.queue.writeBuffer(uniformBuffer, 0, uniformData.buffer as ArrayBuffer);
-    const bindGroup = state.device.createBindGroup({
-      layout: state.pipeline.getBindGroupLayout(0),
+    device.queue.writeBuffer(uniformBuffer, 0, uniformData.buffer as ArrayBuffer);
+    const bindGroup = device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
       entries: [
         { binding: 0, resource: inputTexture.createView() },
         { binding: 1, resource: outputTexture.createView() },
         { binding: 2, resource: { buffer: uniformBuffer } },
       ],
     });
-    const encoder = state.device.createCommandEncoder();
+    const encoder = device.createCommandEncoder();
     const pass = encoder.beginComputePass();
-    pass.setPipeline(state.pipeline);
+    pass.setPipeline(pipeline);
     pass.setBindGroup(0, bindGroup);
     pass.dispatchWorkgroups(Math.ceil(width / WORKGROUP_SIZE), Math.ceil(height / WORKGROUP_SIZE));
     pass.end();
@@ -176,7 +192,7 @@ export async function applyWebGPUAdjustments(canvas: HTMLCanvasElement, adjustme
       { buffer: readbackBuffer, bytesPerRow, rowsPerImage: height },
       { width, height },
     );
-    state.device.queue.submit([encoder.finish()]);
+    device.queue.submit([encoder.finish()]);
     await readbackBuffer.mapAsync(GPUMapMode.READ);
 
     const mapped = new Uint8Array(readbackBuffer.getMappedRange());
@@ -188,15 +204,15 @@ export async function applyWebGPUAdjustments(canvas: HTMLCanvasElement, adjustme
     }
     readbackBuffer.unmap();
     context.putImageData(imageData, 0, 0);
-    return true;
+    return { renderer: "gpu" };
   } catch {
-    if (readbackBuffer.mapState === "mapped") readbackBuffer.unmap();
+    if (readbackBuffer?.mapState === "mapped") readbackBuffer.unmap();
     statePromise = null;
-    return false;
+    return { renderer: "cpu", reason: "runtime error" };
   } finally {
-    inputTexture.destroy();
-    outputTexture.destroy();
-    uniformBuffer.destroy();
-    readbackBuffer.destroy();
+    inputTexture?.destroy();
+    outputTexture?.destroy();
+    uniformBuffer?.destroy();
+    readbackBuffer?.destroy();
   }
 }
