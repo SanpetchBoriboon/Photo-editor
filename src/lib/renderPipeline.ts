@@ -25,6 +25,8 @@ export function createOrientedCanvas(
   const canvas = swapsAxes ? createCanvas(drawHeight, drawWidth) : createCanvas(drawWidth, drawHeight);
   const context = canvas.getContext("2d");
   if (!context) return canvas;
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
   context.translate(canvas.width / 2, canvas.height / 2);
   context.rotate((orientation.rotation + orientation.straighten) * DEGREES_TO_RADIANS);
   context.scale(orientation.flipHorizontal ? -1 : 1, 1);
@@ -38,7 +40,11 @@ function cropCanvas(source: HTMLCanvasElement, crop: CropRect): HTMLCanvasElemen
   const width = Math.min(source.width - sourceX, Math.max(1, Math.round(crop.width * source.width)));
   const height = Math.min(source.height - sourceY, Math.max(1, Math.round(crop.height * source.height)));
   const canvas = createCanvas(width, height);
-  canvas.getContext("2d")?.drawImage(source, sourceX, sourceY, width, height, 0, 0, width, height);
+  const context = canvas.getContext("2d");
+  if (!context) return canvas;
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(source, sourceX, sourceY, width, height, 0, 0, width, height);
   return canvas;
 }
 

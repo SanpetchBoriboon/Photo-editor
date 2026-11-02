@@ -59,7 +59,11 @@ fn main(@builtin(global_invocation_id) invocation: vec3<u32>) {
   let toned = vec3<f32>(grey) + (color - vec3<f32>(luminance)) * colorFactor;
   let contrast = params.toneAndSaturation.z;
   let contrasted = (toned - vec3<f32>(0.18)) * contrast + vec3<f32>(0.18);
-  let output = clamp(linearToSrgb(contrasted), vec3<f32>(0.0), vec3<f32>(1.0));
+  let encoded = linearToSrgb(contrasted);
+  let pixel = vec2f(f32(invocation.x), f32(invocation.y));
+  let noise = fract(52.9829189 * fract(dot(pixel, vec2f(0.06711056, 0.00583715))));
+  let dither = (noise - 0.5) / 255.0;
+  let output = clamp(encoded + vec3f(dither), vec3f(0.0), vec3f(1.0));
   textureStore(outputTexture, coordinate, vec4<f32>(output, source.a));
 }
 `;

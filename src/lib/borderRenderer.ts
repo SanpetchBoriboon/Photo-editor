@@ -222,25 +222,60 @@ export interface BorderInput {
   exif: ExifData;
 }
 
+interface BorderDimensions {
+  border: number;
+  initialBottomBorder: number;
+  minimumWidth: number;
+  minimumHeight: number;
+  width: number;
+  height: number;
+}
+
+function getBorderDimensions(sourceWidth: number, sourceHeight: number, settings: BorderSettings): BorderDimensions {
+  const shorterSide = Math.min(sourceWidth, sourceHeight);
+  const border = Math.round((shorterSide * settings.percent) / 100);
+  if (!settings.enabled || border <= 0) {
+    return {
+      border,
+      initialBottomBorder: 0,
+      minimumWidth: sourceWidth,
+      minimumHeight: sourceHeight,
+      width: sourceWidth,
+      height: sourceHeight,
+    };
+  }
+
+  const initialBottomBorder = Math.round(border * BOTTOM_BORDER_RATIO);
+  const minimumWidth = sourceWidth + 2 * border;
+  const minimumHeight = sourceHeight + border + initialBottomBorder;
+  const canvasAspect = settings.canvasAspect ?? sourceWidth / sourceHeight;
+  let width = minimumWidth;
+  let height = minimumHeight;
+  if (minimumWidth / minimumHeight < canvasAspect) {
+    width = Math.ceil(minimumHeight * canvasAspect);
+  } else if (minimumWidth / minimumHeight > canvasAspect) {
+    height = Math.ceil(minimumWidth / canvasAspect);
+  }
+
+  return { border, initialBottomBorder, minimumWidth, minimumHeight, width, height };
+}
+
+export function getBorderExpansionFactor(sourceWidth: number, sourceHeight: number, settings: BorderSettings): number {
+  const dimensions = getBorderDimensions(sourceWidth, sourceHeight, settings);
+  if (!settings.enabled || dimensions.border <= 0) return 1;
+  return Math.max(dimensions.width, dimensions.height) / Math.max(sourceWidth, sourceHeight);
+}
+
 // Adds a border of `percent` of the shorter side, with captions in the bottom edge.
 export function addBorder(source: HTMLCanvasElement, input: BorderInput): HTMLCanvasElement {
   const { border: settings, caption, captionOverrides, credit, exif } = input;
-  const shorterSide = Math.min(source.width, source.height);
-  const border = Math.round((shorterSide * settings.percent) / 100);
+  const dimensions = getBorderDimensions(source.width, source.height, settings);
+  const { border, initialBottomBorder, minimumWidth, minimumHeight } = dimensions;
   if (!settings.enabled || border <= 0) return source;
-  const initialBottomBorder = Math.round(border * BOTTOM_BORDER_RATIO);
-  const minimumWidth = source.width + 2 * border;
-  const minimumHeight = source.height + border + initialBottomBorder;
-  const canvasAspect = settings.canvasAspect ?? source.width / source.height;
 
   const output = document.createElement("canvas");
-  output.width = minimumWidth;
-  output.height = minimumHeight;
-  if (minimumWidth / minimumHeight < canvasAspect) {
-    output.width = Math.ceil(minimumHeight * canvasAspect);
-  } else if (minimumWidth / minimumHeight > canvasAspect) {
-    output.height = Math.ceil(minimumWidth / canvasAspect);
-  }
+  output.width = dimensions.width;
+  output.height = dimensions.height;
   const context = output.getContext("2d");
   if (!context) return source;
   const extraWidth = output.width - minimumWidth;

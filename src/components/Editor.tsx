@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -20,7 +20,8 @@ import {
 } from "@heroui/react";
 import { useDecodedPhoto } from "@/hooks/useDecodedPhoto";
 import { useEditorState } from "@/hooks/useEditorState";
-import { INTERACTIVE_PREVIEW_MAX_EDGE, PREVIEW_MAX_EDGE } from "@/lib/constants";
+import { INTERACTIVE_PREVIEW_SCALE, MAX_PREVIEW_EDGE, MIN_INTERACTIVE_PREVIEW_EDGE } from "@/lib/constants";
+import { getBorderExpansionFactor } from "@/lib/borderRenderer";
 import { getCaptionTexts, hasMissingCaptionFields } from "@/lib/caption";
 import { adjustCropForStraighten, resolveLockedAspect } from "@/lib/cropMath";
 import { exportPhoto, exportPhotosAsZip } from "@/lib/photoIO";
@@ -86,8 +87,12 @@ export function Editor() {
   const [exportProgress, setExportProgress] = useState<{ done: number; total: number } | null>(null);
   const [exportSize, setExportSize] = useState<PhotoExportSize>("original");
   const [customMegapixels, setCustomMegapixels] = useState(5);
+  const editorStageRef = useRef<HTMLDivElement>(null);
+  const [displayCanvasLongEdge, setDisplayCanvasLongEdge] = useState(0);
+  const [devicePixelRatio, setDevicePixelRatio] = useState(1);
 
   const decoded = useDecodedPhoto(activeEntry?.file ?? null);
+  const activePhotoId = activeEntry?.id;
   const orientation = activeEntry?.edit.orientation ?? null;
   const edit = activeEntry?.edit ?? null;
   const previewOrientation = useMemo(
@@ -98,16 +103,99 @@ export function Editor() {
     [orientation, tab, straightenDraft],
   );
 
+  useEffect(() => {
+    const stage = editorStageRef.current;
+    if (!stage || !activePhotoId || workspace !== "photo" || isPhotoLibraryOpen) {
+      setDisplayCanvasLongEdge(0);
+      return undefined;
+    }
+
+    let observedCanvas: HTMLCanvasElement | null = null;
+    const observer = new ResizeObserver(() => {
+      const canvas = stage.querySelector<HTMLCanvasElement>(".preview-canvas, .crop-canvas");
+      if (canvas !== observedCanvas) {
+        if (observedCanvas) observer.unobserve(observedCanvas);
+        observedCanvas = canvas;
+        if (canvas) observer.observe(canvas);
+      }
+      if (!canvas) return;
+      const bounds = canvas.getBoundingClientRect();
+      const longEdge = Math.max(bounds.width, bounds.height);
+      setDisplayCanvasLongEdge((current) => (Math.abs(current - longEdge) < 0.5 ? current : longEdge));
+    });
+    observer.observe(stage);
+    const initialCanvas = stage.querySelector<HTMLCanvasElement>(".preview-canvas, .crop-canvas");
+    if (initialCanvas) {
+      observedCanvas = initialCanvas;
+      observer.observe(initialCanvas);
+    }
+
+    const updateDevicePixelRatio = () => setDevicePixelRatio(window.devicePixelRatio || 1);
+    updateDevicePixelRatio();
+    window.addEventListener("resize", updateDevicePixelRatio);
+    const frame = requestAnimationFrame(() => {
+      const canvas = stage.querySelector<HTMLCanvasElement>(".preview-canvas, .crop-canvas");
+      if (canvas && canvas !== observedCanvas) {
+        if (observedCanvas) observer.unobserve(observedCanvas);
+        observedCanvas = canvas;
+        observer.observe(canvas);
+      }
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", updateDevicePixelRatio);
+    };
+  }, [activePhotoId, isPhotoLibraryOpen, tab, workspace]);
+
+  const sourceLongEdge = decoded.bitmap ? Math.max(decoded.bitmap.width, decoded.bitmap.height) : MAX_PREVIEW_EDGE;
+  const orientationSwapsAxes = previewOrientation?.rotation === 90 || previewOrientation?.rotation === 270;
+  const orientedSourceWidth = decoded.bitmap
+    ? orientationSwapsAxes
+      ? decoded.bitmap.height
+      : decoded.bitmap.width
+    : 0;
+  const orientedSourceHeight = decoded.bitmap
+    ? orientationSwapsAxes
+      ? decoded.bitmap.width
+      : decoded.bitmap.height
+    : 0;
+  const crop = activeEntry?.edit.crop;
+  const cropSourceWidth = crop
+    ? Math.min(
+        orientedSourceWidth - Math.round(crop.x * orientedSourceWidth),
+        Math.max(1, Math.round(crop.width * orientedSourceWidth)),
+      )
+    : orientedSourceWidth;
+  const cropSourceHeight = crop
+    ? Math.min(
+        orientedSourceHeight - Math.round(crop.y * orientedSourceHeight),
+        Math.max(1, Math.round(crop.height * orientedSourceHeight)),
+      )
+    : orientedSourceHeight;
+  const borderExpansionFactor =
+    decoded.bitmap && activeEntry && tab !== "crop"
+      ? getBorderExpansionFactor(cropSourceWidth, cropSourceHeight, shared.border)
+      : 1;
+  const displayTargetEdge =
+    displayCanvasLongEdge > 0 ? Math.round(displayCanvasLongEdge * devicePixelRatio) : MAX_PREVIEW_EDGE;
+  const fullTarget = Math.min(MAX_PREVIEW_EDGE, sourceLongEdge, displayTargetEdge);
+  const dragTarget = Math.min(
+    sourceLongEdge,
+    MAX_PREVIEW_EDGE,
+    Math.max(MIN_INTERACTIVE_PREVIEW_EDGE, Math.round(fullTarget * INTERACTIVE_PREVIEW_SCALE)),
+  );
+  const fullPreviewEdge = Math.min(sourceLongEdge, MAX_PREVIEW_EDGE, Math.floor(fullTarget / borderExpansionFactor));
+  const dragPreviewEdge = Math.min(sourceLongEdge, MAX_PREVIEW_EDGE, Math.floor(dragTarget / borderExpansionFactor));
+  const previewMaxEdge = isAdjusting ? dragPreviewEdge : fullPreviewEdge;
+
   const oriented = useMemo(
     () =>
       decoded.bitmap && previewOrientation
-        ? createOrientedCanvas(
-            decoded.bitmap,
-            previewOrientation,
-            isAdjusting ? INTERACTIVE_PREVIEW_MAX_EDGE : PREVIEW_MAX_EDGE,
-          )
+        ? createOrientedCanvas(decoded.bitmap, previewOrientation, previewMaxEdge)
         : null,
-    [decoded.bitmap, previewOrientation, isAdjusting],
+    [decoded.bitmap, previewOrientation, previewMaxEdge],
   );
   const settings = useMemo(() => (edit ? toEditSettings(edit, shared) : null), [edit, shared]);
   const cropPreview = useMemo(() => {
@@ -247,7 +335,7 @@ export function Editor() {
           <AdjustPanel
             adjustments={entry.edit.adjustments}
             onChange={editor.setAdjustments}
-            onInteractionStart={(key) => setIsAdjusting(key !== "exposure")}
+            onInteractionStart={() => setIsAdjusting(true)}
             onInteractionEnd={() => setIsAdjusting(false)}
           />
         );
@@ -457,7 +545,7 @@ export function Editor() {
               />
             ) : (
               <>
-                <div className="editor-stage">
+                <div className="editor-stage" ref={editorStageRef}>
                   {photos.length > 1 && (
                     <Button
                       isIconOnly
