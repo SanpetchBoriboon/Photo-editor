@@ -58,6 +58,15 @@ export const UploadIcon = () => (
   </Icon>
 );
 
+export const GridIcon = () => (
+  <Icon>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
+  </Icon>
+);
+
 export const CloseIcon = () => (
   <Icon>
     <path d="M18 6 6 18" />

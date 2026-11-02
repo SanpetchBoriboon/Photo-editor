@@ -25,12 +25,14 @@ import {
   BorderIcon,
   CropIcon,
   DownloadIcon,
+  GridIcon,
   InfoIcon,
   NextPhotoIcon,
   PreviousPhotoIcon,
 } from "./icons";
 import { InfoPanel } from "./InfoPanel";
 import { LayoutEditor } from "./LayoutEditor";
+import { PhotoLibrary } from "./PhotoLibrary";
 import { PhotoUpload } from "./PhotoUpload";
 import { Preview } from "./Preview";
 
@@ -60,6 +62,7 @@ export function Editor() {
   const routeMode = pathname.split("/")[2];
   const layoutMode: LayoutMode = routeMode === "freeform" || routeMode === "print" || routeMode === "composition" ? routeMode : "collage";
   const [tab, setTab] = useState<TabId>("adjust");
+  const [isPhotoLibraryOpen, setIsPhotoLibraryOpen] = useState(false);
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [straightenDraft, setStraightenDraft] = useState<number | null>(null);
   const [exportError, setExportError] = useState("");
@@ -113,6 +116,11 @@ export function Editor() {
   function selectPhoto(id: string): void {
     setStraightenDraft(null);
     editor.selectPhoto(id);
+  }
+
+  function selectLibraryPhoto(id: string): void {
+    selectPhoto(id);
+    setIsPhotoLibraryOpen(false);
   }
 
   useEffect(() => {
@@ -250,16 +258,22 @@ export function Editor() {
 
   const isExporting = exportProgress !== null;
   const activePhotoIndex = photos.findIndex((photo) => photo.id === activeEntry?.id);
+  const workspaceLinks = WORKSPACE_LINKS.filter(({ href }) =>
+    workspace === "photo" ? href === "/edit" : workspace === "layout" ? href !== "/edit" : true,
+  );
   if (pathname !== "/" && !WORKSPACE_LINKS.some(({ href }) => href === pathname)) return null;
   const header = (
     <header className="workspace-header">
       <div className="workspace-heading">
-        <h1 className="text-xl font-semibold">
-          <Link href="/" aria-label={t("home")}>
-            <span className="text-default-500">Still</span>
-            <span className="text-primary">frame</span>
-          </Link>
-        </h1>
+        <div className="workspace-heading-start">
+          <h1 className="text-xl font-semibold">
+            <Link href="/" aria-label={t("home")}>
+              <span className="text-default-500">Still</span>
+              <span className="text-primary">frame</span>
+            </Link>
+          </h1>
+
+        </div>
         <ButtonGroup size="sm" variant="flat" aria-label={t("language")}>
           {(["th", "en"] as const).map((option) => (
             <Button key={option} color={language === option ? "primary" : "default"} onPress={() => setLanguage(option)}>
@@ -268,13 +282,15 @@ export function Editor() {
           ))}
         </ButtonGroup>
       </div>
-      <nav className="workspace-nav" aria-label={t("workspaceMode")}>
-        {WORKSPACE_LINKS.map(({ href, labelKey }) => (
-          <Link key={href} href={href} scroll={false} aria-current={pathname === href ? "page" : undefined} onNavigate={() => setIsAdjusting(false)}>
-            {t(labelKey)}
-          </Link>
-        ))}
-      </nav>
+      {workspaceLinks.length > 1 && (
+        <nav className="workspace-nav" aria-label={t("workspaceMode")}>
+          {workspaceLinks.map(({ href, labelKey }) => (
+            <Link key={href} href={href} scroll={false} aria-current={pathname === href ? "page" : undefined} onNavigate={() => setIsAdjusting(false)}>
+              {t(labelKey)}
+            </Link>
+          ))}
+        </nav>
+      )}
     </header>
   );
 
@@ -282,10 +298,15 @@ export function Editor() {
     <div className="workspace-shell" hidden={workspace === "home"}>
     {header}
     <div className="workspace-content">
-    <main className="editor-layout" hidden={workspace !== "photo"}>
+    <main className={isPhotoLibraryOpen ? "editor-layout editor-layout-library" : "editor-layout"} hidden={workspace !== "photo"}>
       <aside className="editor-sidebar">
         <div className="editor-upload">
           <PhotoUpload onAdd={editor.addPhotos} />
+          {photos.length > 0 && (
+            <Button variant="bordered" startContent={<GridIcon />} onPress={() => setIsPhotoLibraryOpen(true)}>
+              {t("photoLibrary")} ({photos.length})
+            </Button>
+          )}
         </div>
         {activeEntry && (
           <Tabs
@@ -354,35 +375,47 @@ export function Editor() {
         </div>
       </aside>
       <section className="editor-workspace">
-        <div className="editor-stage">
-          {photos.length > 1 && (
-            <Button
-              isIconOnly
-              variant="flat"
-              aria-label={t("previousPhoto")}
-              isDisabled={activePhotoIndex <= 0}
-              onPress={() => activePhotoIndex > 0 && selectPhoto(photos[activePhotoIndex - 1].id)}
-            >
-              <PreviousPhotoIcon />
-            </Button>
-          )}
-          {renderStage()}
-          {photos.length > 1 && (
-            <Button
-              isIconOnly
-              variant="flat"
-              aria-label={t("nextPhoto")}
-              isDisabled={activePhotoIndex >= photos.length - 1}
-              onPress={() => activePhotoIndex < photos.length - 1 && selectPhoto(photos[activePhotoIndex + 1].id)}
-            >
-              <NextPhotoIcon />
-            </Button>
-          )}
-        </div>
-        {photos.length > 0 && (
-          <div className="editor-filmstrip">
-            <Filmstrip photos={photos} activeId={activeEntry?.id ?? null} onSelect={selectPhoto} onRemove={removePhoto} />
-          </div>
+        {isPhotoLibraryOpen ? (
+          <PhotoLibrary
+            photos={photos}
+            activeId={activeEntry?.id ?? null}
+            onAdd={editor.addPhotos}
+            onSelect={selectLibraryPhoto}
+            onClose={() => setIsPhotoLibraryOpen(false)}
+          />
+        ) : (
+          <>
+            <div className="editor-stage">
+              {photos.length > 1 && (
+                <Button
+                  isIconOnly
+                  variant="flat"
+                  aria-label={t("previousPhoto")}
+                  isDisabled={activePhotoIndex <= 0}
+                  onPress={() => activePhotoIndex > 0 && selectPhoto(photos[activePhotoIndex - 1].id)}
+                >
+                  <PreviousPhotoIcon />
+                </Button>
+              )}
+              {renderStage()}
+              {photos.length > 1 && (
+                <Button
+                  isIconOnly
+                  variant="flat"
+                  aria-label={t("nextPhoto")}
+                  isDisabled={activePhotoIndex >= photos.length - 1}
+                  onPress={() => activePhotoIndex < photos.length - 1 && selectPhoto(photos[activePhotoIndex + 1].id)}
+                >
+                  <NextPhotoIcon />
+                </Button>
+              )}
+            </div>
+            {photos.length > 0 && (
+              <div className="editor-filmstrip">
+                <Filmstrip photos={photos} activeId={activeEntry?.id ?? null} onSelect={selectPhoto} onRemove={removePhoto} />
+              </div>
+            )}
+          </>
         )}
       </section>
     </main>

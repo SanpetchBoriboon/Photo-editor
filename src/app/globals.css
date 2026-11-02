@@ -201,6 +201,22 @@ body {
   padding: 14px 24px 6px;
 }
 
+.workspace-heading-start {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.workspace-back {
+  color: hsl(var(--heroui-default-500));
+  font-size: 14px;
+  transition: color 150ms ease;
+}
+
+.workspace-back:hover {
+  color: hsl(var(--heroui-foreground));
+}
+
 .workspace-nav {
   display: flex;
   align-items: stretch;
@@ -251,6 +267,18 @@ body {
   min-height: 0;
 }
 
+.editor-layout-library {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.editor-layout-library .editor-sidebar {
+  display: none;
+}
+
+.editor-layout-library .editor-workspace {
+  grid-column: 1;
+}
+
 .editor-sidebar {
   grid-column: 1;
   grid-row: 1;
@@ -284,6 +312,250 @@ body {
 
 .editor-filmstrip {
   flex: 0 0 auto;
+}
+
+.editor-library {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  color: #f2f2f2;
+  background: #1d1d1f;
+}
+
+.editor-library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #38383a;
+}
+
+.editor-library-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+
+.editor-library-heading h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.editor-library-heading span {
+  color: #a4a4a7;
+  font-size: 13px;
+}
+
+.editor-library-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  align-content: start;
+  gap: 14px;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+}
+
+.editor-library-item {
+  min-width: 0;
+  padding: 5px;
+  overflow: hidden;
+  border: 1px solid #444447;
+  border-radius: 2px;
+  color: inherit;
+  background: #29292b;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.editor-library-item:hover {
+  border-color: #858589;
+  background: #333336;
+}
+
+.editor-library-item[aria-pressed="true"] {
+  border-color: hsl(var(--heroui-primary));
+  box-shadow: inset 0 0 0 1px hsl(var(--heroui-primary));
+}
+
+.editor-library-item:focus-visible {
+  outline: 2px solid hsl(var(--heroui-primary));
+  outline-offset: 2px;
+}
+
+.editor-library-thumbnail {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: #38383a;
+}
+
+.editor-library-thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.editor-library-item:hover .editor-library-thumbnail img {
+  transform: scale(1.025);
+}
+
+.editor-library-index,
+.editor-library-selected-mark {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 2px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.72);
+  font-size: 12px;
+}
+
+.editor-library-index {
+  top: 7px;
+  left: 7px;
+}
+
+.editor-library-selected-mark {
+  top: 7px;
+  right: 7px;
+  color: #111;
+  background: hsl(var(--heroui-primary));
+  font-weight: 700;
+}
+
+.photo-import-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.photo-import-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.photo-import-header p {
+  margin: 4px 0 0;
+  color: hsl(var(--heroui-default-500));
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.photo-import-body {
+  min-height: 0;
+}
+
+.photo-import-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 2px;
+}
+
+.photo-import-item {
+  min-width: 0;
+  padding: 5px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--heroui-default-300));
+  border-radius: 3px;
+  background: hsl(var(--heroui-content2));
+  text-align: left;
+  cursor: pointer;
+}
+
+.photo-import-item[aria-pressed="true"] {
+  border-color: hsl(var(--heroui-primary));
+  box-shadow: inset 0 0 0 1px hsl(var(--heroui-primary));
+}
+
+.photo-import-item:focus-visible {
+  outline: 2px solid hsl(var(--heroui-primary));
+  outline-offset: 2px;
+}
+
+.photo-import-thumbnail {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: hsl(var(--heroui-default-100));
+}
+
+.photo-import-thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-import-check {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.62);
+  font-size: 14px;
+}
+
+.photo-import-item[aria-pressed="true"] .photo-import-check {
+  border-color: hsl(var(--heroui-primary));
+  color: #fff;
+  background: hsl(var(--heroui-primary));
+}
+
+.photo-import-filename {
+  display: block;
+  overflow: hidden;
+  padding: 7px 2px 2px;
+  color: hsl(var(--heroui-foreground));
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-import-footer {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.photo-import-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.editor-library-filename {
+  display: block;
+  overflow: hidden;
+  padding: 8px 3px 4px;
+  color: #e7e7e9;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .editor-tools {
@@ -788,6 +1060,10 @@ body {
     overflow: hidden;
   }
 
+  .editor-layout-library {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
   body {
     overflow: hidden;
   }
@@ -810,6 +1086,50 @@ body {
 
   .editor-workspace {
     display: contents;
+  }
+
+  .editor-layout-library .editor-workspace {
+    display: flex;
+    grid-row: 1;
+  }
+
+  .editor-library-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .editor-library-actions {
+    width: 100%;
+  }
+
+  .editor-library-actions > * {
+    flex: 1;
+  }
+
+  .editor-library-grid {
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 9px;
+    padding: 12px;
+  }
+
+  .photo-import-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+  }
+
+  .photo-import-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .photo-import-footer > * {
+    width: 100%;
+  }
+
+  .photo-import-footer-actions > * {
+    flex: 1;
   }
 
   .editor-stage {
