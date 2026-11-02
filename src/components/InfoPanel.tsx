@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Alert, Button, Checkbox, Input, Radio, RadioGroup, Select, SelectItem } from "@heroui/react";
+import { Alert, Button, Checkbox, Input, Radio, RadioGroup, Select, SelectItem, Textarea } from "@heroui/react";
 import { CREDIT_TEXT_MAX_LENGTH } from "@/lib/constants";
 import { CAPTION_FIELDS, getCaptionTexts, getExifTexts } from "@/lib/caption";
 import { findLensSuggestion, getLensBrands } from "@/lib/lensCatalog";
@@ -42,6 +42,7 @@ export function InfoPanel({
 }: InfoPanelProps) {
   const { t } = useLanguage();
   const [error, setError] = useState("");
+  const [copyResult, setCopyResult] = useState<{ text: string; status: "copied" | "copyFailed" } | null>(null);
   const exifTexts = getExifTexts(exif);
   const texts = getCaptionTexts(exif, captionOverrides);
   const lensBrands = getLensBrands(texts.make);
@@ -58,11 +59,19 @@ export function InfoPanel({
     shutter: t("shutter"),
     iso: t("iso"),
   };
+  const descriptionText = CAPTION_FIELDS.map((field) => {
+    const value = texts[field].trim();
+    return value ? `${fieldLabels[field]}: ${value}` : "";
+  })
+    .filter(Boolean)
+    .join("\n");
   const creditModes: readonly { value: CreditMode; label: string }[] = [
     { value: "off", label: t("off") },
     { value: "text", label: t("text") },
     { value: "image", label: t("logo") },
   ];
+
+  const copyStatus = copyResult?.text === descriptionText ? copyResult.status : "";
 
   async function handleCreditImage(files: File[]): Promise<void> {
     const [file] = files;
@@ -81,6 +90,15 @@ export function InfoPanel({
     if (mode) {
       setError("");
       onCreditChange({ ...credit, mode });
+    }
+  }
+
+  async function handleCopyDescription(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(descriptionText);
+      setCopyResult({ text: descriptionText, status: "copied" });
+    } catch {
+      setCopyResult({ text: descriptionText, status: "copyFailed" });
     }
   }
 
@@ -153,6 +171,25 @@ export function InfoPanel({
             )}
           </div>
         ))}
+      </div>
+      <Textarea
+        aria-label={t("photoDescription")}
+        label={t("photoDescription")}
+        minRows={4}
+        size="sm"
+        value={descriptionText}
+        variant="bordered"
+        isReadOnly
+      />
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant="flat" isDisabled={!descriptionText} onPress={handleCopyDescription}>
+          {t("copyInformation")}
+        </Button>
+        {copyStatus && (
+          <span className="text-xs text-default-500" role="status" aria-live="polite">
+            {t(copyStatus)}
+          </span>
+        )}
       </div>
       <Button
         size="sm"
