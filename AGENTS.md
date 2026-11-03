@@ -24,3 +24,16 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   git grep -nE "console\.debug|forceCpu|__run|TODO\(tmp\)" src/  แล้วรายงานผล
 - ถ้า patch ล้มเหลว ห้ามลองแก้ซ้ำแบบเดาจนไฟล์ซ้อนกัน ให้ git diff ดูสถานะก่อน
 - ปิดงานทุกครั้งด้วย npx tsc --noEmit && npm run format:check && npm run lint && npm run build
+
+กฎการทำงาน (งาน UI):
+- แก้เฉพาะ presentation (JSX/CSS/Tailwind/tokens/ข้อความแบรนด์) ห้ามแก้ src/lib/ ที่เป็น engine
+  ห้ามเปลี่ยนพฤติกรรม ลำดับ หรือชื่อ state ของการปรับภาพ
+- ห้ามเปลี่ยน aria-label, role, data-slot และข้อความ label ของ control เดิม (e2e/test พึ่งพา)
+  slider ใหม่ต้องคง [data-slot="thumb"] และ [data-slot="track"] ของ HeroUI
+- ห้ามเพิ่ม dependency ห้าม commit เอง ห้ามทิ้ง debug code
+- ทุกรอบถ่ายภาพหน้าจอ "ก่อนและหลัง" ด้วย Playwright ที่ viewport 1440x900, 1024x768, 390x844
+  เก็บใน test-output/ui/ ชื่อ <หน้า>-<viewport>-before/after.png แล้วรายงาน path
+- ใช้ test-assets/DSCF1865.JPG ถ้ามี ไม่งั้นใช้ภาพตัวอย่างในแอป
+- ปิดงานด้วย npx tsc --noEmit && npm run format:check && npm run lint && npm run build และรายงาน git diff --stat
+- ถ้า patch ล้มเหลว ห้ามลองซ้ำแบบเดา ให้ git diff ดูสถานะก่อน
+- ตัวเลขที่รายงานต้องมาจากการรันจริง ถ้าวัดไม่ได้ให้บอกว่าวัดไม่ได้
