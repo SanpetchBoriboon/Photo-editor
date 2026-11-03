@@ -16,16 +16,18 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Native elements may be used for browser plumbing that requires them, such as a hidden file input or canvas, while keeping the visible control in HeroUI.
 
 กฎการทำงาน:
+
 - ทำเฉพาะสิ่งที่ prompt ระบุ ห้ามแก้ไฟล์นอกขอบเขต ห้ามเปลี่ยนพฤติกรรมของภาพที่ได้ (refactor ล้วน)
 - ก่อนเริ่มรัน git status แล้วรายงาน ถ้ามีไฟล์ค้างให้หยุดถาม
 - ห้ามเพิ่ม dependency นอกรายการที่ระบุ ห้าม commit เอง
 - ตัวเลขที่รายงานต้องมาจากการรันจริง ถ้าวัดไม่ได้ให้บอกว่าวัดไม่ได้ ห้ามเดา
 - ห้ามทิ้ง debug code/flag ชั่วคราว จบงานต้องรัน
-  git grep -nE "console\.debug|forceCpu|__run|TODO\(tmp\)" src/  แล้วรายงานผล
+  git grep -nE "console\.debug|forceCpu|__run|TODO\(tmp\)" src/ แล้วรายงานผล
 - ถ้า patch ล้มเหลว ห้ามลองแก้ซ้ำแบบเดาจนไฟล์ซ้อนกัน ให้ git diff ดูสถานะก่อน
 - ปิดงานทุกครั้งด้วย npx tsc --noEmit && npm run format:check && npm run lint && npm run build
 
 กฎการทำงาน (งาน UI):
+
 - แก้เฉพาะ presentation (JSX/CSS/Tailwind/tokens/ข้อความแบรนด์) ห้ามแก้ src/lib/ ที่เป็น engine
   ห้ามเปลี่ยนพฤติกรรม ลำดับ หรือชื่อ state ของการปรับภาพ
 - ห้ามเปลี่ยน aria-label, role, data-slot และข้อความ label ของ control เดิม (e2e/test พึ่งพา)
