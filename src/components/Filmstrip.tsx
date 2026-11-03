@@ -30,7 +30,7 @@ export function Filmstrip({ photos, activeId, onSelect, onRemove }: FilmstripPro
             aria-pressed={photo.id === activeId}
             onClick={() => onSelect(photo.id)}
             className={`block cursor-pointer overflow-hidden rounded-lg border-2 ${
-              photo.id === activeId ? "border-primary" : "border-transparent opacity-70"
+              photo.id === activeId ? "border-text-primary" : "border-transparent opacity-70"
             }`}
           >
             <Image

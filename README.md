@@ -37,6 +37,10 @@ Each layout page retains its own settings while navigating within the app, retur
 
 Home preview photographs are stored locally, sourced from Unsplash: [mountain](https://images.unsplash.com/photo-1464822759023-fed622ff2c3b) and [lake](https://images.unsplash.com/photo-1501785888041-af3ef285b470).
 
+## Testing
+
+Run `npm run build && npm start`, then `node scripts/ui-capture.mjs` to save 1440x900, 1024x768 and 390x844 screenshots of every page to `test-output/ui/` using the locally installed Chrome (set `CHROME_PATH` if it is not in the default macOS location). Options: `--suffix NAME` (default `after`), `--base URL`, `--out DIR`, `--states` (hover/focus captures) and `--export` (also downloads a photo and a layout and prints the file names).
+
 ## Code Formatting
 
 Run `npm run format` to format supported project files with Prettier. Run `npm run format:check` to check formatting without changing files. Formatting rules live in `.prettierrc.json`; generated files, dependencies, and assets are excluded in `.prettierignore`.

@@ -32,7 +32,7 @@ export function AdjustPanel({ adjustments, onChange }: AdjustPanelProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="adjust-panel flex flex-col gap-3">
       <h2 className="text-sm text-default-500">{t("adjustmentsForPhoto")}</h2>
       {ADJUSTMENT_CONTROLS.map(({ key }) => {
         const isExposure = key === "exposure";

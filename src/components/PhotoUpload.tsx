@@ -247,7 +247,7 @@ export function PhotoUpload({ onAdd, prominent = false, dropzone = false }: Phot
                   >
                     {t("cancel")}
                   </Button>
-                  <Button color="primary" isDisabled={isLoading || selectedCount === 0} onPress={importSelectedPhotos}>
+                  <Button isDisabled={isLoading || selectedCount === 0} onPress={importSelectedPhotos}>
                     {isLoading && importProgress
                       ? `${t("importProgress").replace("{done}", String(importProgress.done)).replace("{total}", String(importProgress.total))}`
                       : `${t("importSelected")} (${selectedCount})`}

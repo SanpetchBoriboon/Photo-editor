@@ -6,7 +6,7 @@ const neutral = {
   100: "#2a2a2a",
   200: "#333333",
   300: "#3a3a3a",
-  400: "#8f8f8f",
+  400: "#999999",
   500: "#b3b3b3",
   600: "#c8c8c8",
   700: "#d9d9d9",
@@ -28,6 +28,10 @@ const accent = {
 };
 
 export default heroui({
+  layout: {
+    // Mirrors --radius-control and --radius-sheet in globals.css.
+    radius: { small: "6px", medium: "6px", large: "16px" },
+  },
   themes: {
     dark: {
       colors: {

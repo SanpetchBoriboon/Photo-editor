@@ -28,7 +28,7 @@ export function UploadButton({
     <>
       <Button
         className={buttonClassName}
-        color={isPrimary ? "primary" : "default"}
+        color="default"
         variant={isPrimary ? "solid" : "bordered"}
         isDisabled={isDisabled}
         startContent={<UploadIcon />}

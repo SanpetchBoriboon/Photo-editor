@@ -13,12 +13,14 @@ export default function HomePage() {
   return (
     <div className="home-shell">
       <header className="home-header">
-        <h1>{APP_NAME}</h1>
+        <p className="home-wordmark">{APP_NAME}</p>
         <ButtonGroup size="sm" variant="flat" aria-label={t("language")}>
           {(["th", "en"] as const).map((option) => (
             <Button
               key={option}
-              color={language === option ? "primary" : "default"}
+              className={
+                language === option ? "bg-surface-raised text-text-primary" : "bg-surface-bar text-text-secondary"
+              }
               onPress={() => setLanguage(option)}
             >
               {option.toUpperCase()}
@@ -27,7 +29,7 @@ export default function HomePage() {
         </ButtonGroup>
       </header>
       <main className="home-main">
-        <h2>{t("chooseWorkspace")}</h2>
+        <h1>{t("chooseWorkspace")}</h1>
         <div className="home-choices">
           <Link href="/edit" className="home-choice home-choice-edit">
             <div className="home-choice-media home-edit-preview" aria-hidden="true">

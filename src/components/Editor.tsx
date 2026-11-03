@@ -399,17 +399,20 @@ export function Editor() {
     <header className="workspace-header">
       <div className="workspace-heading">
         <div className="workspace-heading-start">
-          <h1 className="text-xl font-semibold">
+          <p className="text-xl font-semibold">
             <Link href="/" aria-label={t("home")}>
               {APP_NAME}
             </Link>
-          </h1>
+          </p>
+          {workspace !== "home" && <h1 className="sr-only">{t(workspace === "photo" ? "photoEditor" : layoutMode)}</h1>}
         </div>
         <ButtonGroup size="sm" variant="flat" aria-label={t("language")}>
           {(["th", "en"] as const).map((option) => (
             <Button
               key={option}
-              color={language === option ? "primary" : "default"}
+              className={
+                language === option ? "bg-surface-raised text-text-primary" : "bg-surface-bar text-text-secondary"
+              }
               onPress={() => setLanguage(option)}
             >
               {option.toUpperCase()}
@@ -460,6 +463,11 @@ export function Editor() {
             {activeEntry && (
               <Tabs
                 className="editor-tabs"
+                classNames={{
+                  tabList: "bg-surface-bar",
+                  cursor: "bg-surface-raised dark:bg-surface-raised shadow-none",
+                  tabContent: "text-text-secondary group-data-[selected=true]:text-text-primary",
+                }}
                 fullWidth
                 aria-label={t("editTools")}
                 selectedKey={tab}
@@ -537,7 +545,11 @@ export function Editor() {
                         {(["fit", "100%", "200%"] as const).map((option) => (
                           <Button
                             key={option}
-                            color={canvasZoom === option ? "primary" : "default"}
+                            className={
+                              canvasZoom === option
+                                ? "bg-surface-raised text-text-primary"
+                                : "bg-surface-bar text-text-secondary"
+                            }
                             aria-pressed={canvasZoom === option}
                             onPress={() => setCanvasZoom(option)}
                           >

@@ -14,7 +14,7 @@
   --color-border-strong: #3a3a3a;
   --color-text-primary: #ececec;
   --color-text-secondary: #b3b3b3;
-  --color-text-muted: #8f8f8f;
+  --color-text-muted: #999999;
   --color-accent: #e9a23b;
   --color-on-accent: #1a1a1a;
 
@@ -62,7 +62,7 @@ body {
   background: var(--color-surface-bar);
 }
 
-.home-header h1 {
+.home-wordmark {
   font-size: var(--text-20);
   font-weight: var(--font-weight-semibold);
 }
@@ -73,7 +73,7 @@ body {
   padding: calc(var(--spacing) * 12) calc(var(--spacing) * 8);
 }
 
-.home-main > h2 {
+.home-main > h1 {
   margin-bottom: calc(var(--spacing) * 6);
   font-size: var(--text-20);
   font-weight: var(--font-weight-medium);
@@ -192,7 +192,7 @@ body {
       max(calc(var(--spacing) * 7), env(safe-area-inset-bottom));
   }
 
-  .home-main > h2 {
+  .home-main > h1 {
     margin-bottom: calc(var(--spacing) * 5);
   }
 
@@ -328,17 +328,17 @@ body {
   grid-row: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: calc(var(--spacing) * 4);
   overflow-y: auto;
-  padding: 20px;
-  border-right: 1px solid hsl(var(--heroui-default-200));
-  background: hsl(var(--heroui-content1));
+  padding: calc(var(--spacing) * 5);
+  border-right: 1px solid var(--color-border-default);
+  background: var(--color-surface-panel);
 }
 
 .editor-upload {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: calc(var(--spacing) * 2);
   width: 100%;
   min-width: 0;
 }
@@ -354,10 +354,10 @@ body {
   min-width: 0;
   min-height: 52px;
   justify-content: flex-start;
-  padding-inline: 16px;
-  font-size: 14px;
+  padding-inline: calc(var(--spacing) * 4);
+  font-size: var(--text-14);
   line-height: 20px;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .editor-upload-primary svg {
@@ -374,11 +374,11 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 22px;
-  padding: 28px 20px;
-  border: 1px dashed hsl(var(--heroui-default-300));
-  border-radius: 8px;
-  background: hsl(var(--heroui-content1));
+  gap: calc(var(--spacing) * 6);
+  padding: calc(var(--spacing) * 7) calc(var(--spacing) * 5);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-panel);
   text-align: center;
   transition:
     background-color 150ms ease,
@@ -386,33 +386,33 @@ body {
 }
 
 .photo-dropzone-active {
-  border-color: hsl(var(--heroui-primary));
-  background: hsl(var(--heroui-primary) / 0.08);
+  border-color: var(--color-text-primary);
+  background: var(--color-surface-raised);
 }
 
 .photo-dropzone-prompt {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  color: hsl(var(--heroui-default-500));
+  gap: calc(var(--spacing) * 3);
+  color: var(--color-text-secondary);
 }
 
 .photo-dropzone-prompt svg {
   width: 32px;
   height: 32px;
-  color: hsl(var(--heroui-primary));
+  color: var(--color-text-secondary);
 }
 
 .photo-dropzone-prompt p {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: var(--text-20);
+  font-weight: var(--font-weight-semibold);
 }
 
 .photo-dropzone-prompt span,
 .photo-samples p {
-  color: hsl(var(--heroui-default-500));
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-14);
 }
 
 .photo-dropzone-action {
@@ -428,26 +428,26 @@ body {
   min-width: 0;
   min-height: 0;
   flex-direction: column;
-  gap: 20px;
-  padding: 24px;
+  gap: calc(var(--spacing) * 5);
+  padding: calc(var(--spacing) * 6);
 }
 
 .photo-empty-state > h2 {
   flex: 0 0 auto;
-  font-size: 26px;
-  font-weight: 600;
+  font-size: var(--text-20);
+  font-weight: var(--font-weight-semibold);
 }
 
 .photo-samples {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: calc(var(--spacing) * 2);
 }
 
 .photo-sample-list {
   display: flex;
-  gap: 8px;
+  gap: calc(var(--spacing) * 2);
 }
 
 .photo-sample-list > button {
@@ -456,7 +456,7 @@ body {
   min-width: 0;
   padding: 0;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--radius-control);
 }
 
 .photo-sample-list img {
@@ -470,8 +470,8 @@ body {
   min-width: 0;
   min-height: 44px;
   justify-content: flex-start;
-  padding-inline: 14px;
-  border: 1px solid hsl(var(--heroui-default-200));
+  padding-inline: calc(var(--spacing) * 4);
+  border: 1px solid var(--color-border-default);
 }
 
 .editor-library-count {
@@ -481,12 +481,12 @@ body {
   align-items: center;
   justify-content: center;
   margin-inline-start: auto;
-  padding-inline: 6px;
-  border-radius: 999px;
-  background: hsl(var(--heroui-default-100));
-  color: hsl(var(--heroui-foreground));
-  font-size: 12px;
-  font-weight: 600;
+  padding-inline: calc(var(--spacing) * 2);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  color: var(--color-text-primary);
+  font-size: var(--text-12);
+  font-weight: var(--font-weight-semibold);
 }
 
 .editor-workspace {
@@ -507,7 +507,8 @@ body {
   min-width: 0;
   min-height: 0;
   overflow: auto;
-  padding: 20px;
+  padding: calc(var(--spacing) * 5);
+  background: var(--color-surface-stage);
 }
 
 .editor-stage[data-canvas-zoom="100%"],
@@ -518,8 +519,8 @@ body {
 
 .canvas-zoom-controls {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: calc(var(--spacing) * 3);
+  right: calc(var(--spacing) * 3);
   z-index: 2;
 }
 
@@ -533,61 +534,61 @@ body {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  color: #f2f2f2;
-  background: #1d1d1f;
+  color: var(--color-text-primary);
+  background: var(--color-surface-stage);
 }
 
 .editor-library-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 18px;
-  border-bottom: 1px solid #38383a;
+  gap: calc(var(--spacing) * 4);
+  padding: calc(var(--spacing) * 4) calc(var(--spacing) * 5);
+  border-bottom: 1px solid var(--color-border-default);
 }
 
 .editor-library-heading {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: calc(var(--spacing) * 3);
   min-width: 0;
 }
 
 .editor-library-heading h2 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--text-15);
+  font-weight: var(--font-weight-semibold);
 }
 
 .editor-library-heading span {
-  color: #a4a4a7;
-  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-13);
 }
 
 .editor-library-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(var(--spacing) * 3);
 }
 
 .editor-library-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
   align-content: start;
-  gap: 14px;
+  gap: calc(var(--spacing) * 4);
   min-height: 0;
   overflow: auto;
-  padding: 16px;
+  padding: calc(var(--spacing) * 4);
 }
 
 .editor-library-item {
   min-width: 0;
-  padding: 5px;
+  padding: calc(var(--spacing) * 1);
   overflow: hidden;
-  border: 1px solid #444447;
-  border-radius: 2px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
   color: inherit;
-  background: #29292b;
+  background: var(--color-surface-panel);
   text-align: left;
   cursor: pointer;
   transition:
@@ -596,17 +597,17 @@ body {
 }
 
 .editor-library-item:hover {
-  border-color: #858589;
-  background: #333336;
+  border-color: var(--color-text-muted);
+  background: var(--color-surface-raised);
 }
 
 .editor-library-item[aria-pressed="true"] {
-  border-color: hsl(var(--heroui-primary));
-  box-shadow: inset 0 0 0 1px hsl(var(--heroui-primary));
+  border-color: var(--color-text-primary);
+  box-shadow: inset 0 0 0 1px var(--color-text-primary);
 }
 
 .editor-library-item:focus-visible {
-  outline: 2px solid hsl(var(--heroui-primary));
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
@@ -614,7 +615,7 @@ body {
   position: relative;
   overflow: hidden;
   aspect-ratio: 4 / 3;
-  background: #38383a;
+  background: var(--color-surface-raised);
 }
 
 .editor-library-thumbnail img {
@@ -636,43 +637,43 @@ body {
   place-items: center;
   min-width: 22px;
   height: 22px;
-  border-radius: 2px;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.72);
-  font-size: 12px;
+  border-radius: var(--radius-control);
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-surface-stage) 72%, transparent);
+  font-size: var(--text-12);
 }
 
 .editor-library-index {
-  top: 7px;
-  left: 7px;
+  top: 8px;
+  left: 8px;
 }
 
 .editor-library-selected-mark {
-  top: 7px;
-  right: 7px;
-  color: #111;
-  background: hsl(var(--heroui-primary));
-  font-weight: 700;
+  top: 8px;
+  right: 8px;
+  color: var(--color-on-accent);
+  background: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
 }
 
 .photo-import-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: calc(var(--spacing) * 4);
 }
 
 .photo-import-header h2 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--text-20);
+  font-weight: var(--font-weight-semibold);
 }
 
 .photo-import-header p {
-  margin: 4px 0 0;
-  color: hsl(var(--heroui-default-500));
-  font-size: 13px;
-  font-weight: 400;
+  margin: calc(var(--spacing) * 1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-13);
+  font-weight: var(--font-weight-normal);
 }
 
 .photo-import-body {
@@ -682,28 +683,28 @@ body {
 .photo-import-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
-  padding: 2px;
+  gap: calc(var(--spacing) * 3);
+  padding: calc(var(--spacing) * 1);
 }
 
 .photo-import-item {
   min-width: 0;
-  padding: 5px;
+  padding: calc(var(--spacing) * 1);
   overflow: hidden;
-  border: 1px solid hsl(var(--heroui-default-300));
-  border-radius: 3px;
-  background: hsl(var(--heroui-content2));
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-raised);
   text-align: left;
   cursor: pointer;
 }
 
 .photo-import-item[aria-pressed="true"] {
-  border-color: hsl(var(--heroui-primary));
-  box-shadow: inset 0 0 0 1px hsl(var(--heroui-primary));
+  border-color: var(--color-text-primary);
+  box-shadow: inset 0 0 0 1px var(--color-text-primary);
 }
 
 .photo-import-item:focus-visible {
-  outline: 2px solid hsl(var(--heroui-primary));
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
@@ -712,7 +713,7 @@ body {
   display: block;
   overflow: hidden;
   aspect-ratio: 4 / 3;
-  background: hsl(var(--heroui-default-100));
+  background: var(--color-surface-panel);
 }
 
 .photo-import-thumbnail img {
@@ -724,51 +725,51 @@ body {
 
 .photo-import-check {
   position: absolute;
-  top: 7px;
-  right: 7px;
+  top: 8px;
+  right: 8px;
   display: grid;
   place-items: center;
   width: 22px;
   height: 22px;
-  border: 1px solid #fff;
+  border: 1px solid var(--color-text-primary);
   border-radius: 50%;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.62);
-  font-size: 14px;
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-surface-stage) 62%, transparent);
+  font-size: var(--text-14);
 }
 
 .photo-import-item[aria-pressed="true"] .photo-import-check {
-  border-color: hsl(var(--heroui-primary));
-  color: #fff;
-  background: hsl(var(--heroui-primary));
+  border-color: var(--color-text-primary);
+  color: var(--color-on-accent);
+  background: var(--color-text-primary);
 }
 
 .photo-import-filename {
   display: block;
   overflow: hidden;
-  padding: 7px 2px 2px;
-  color: hsl(var(--heroui-foreground));
-  font-size: 12px;
+  padding: calc(var(--spacing) * 2) calc(var(--spacing) * 1) calc(var(--spacing) * 1);
+  color: var(--color-text-primary);
+  font-size: var(--text-12);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .photo-import-footer {
   justify-content: space-between;
-  gap: 12px;
+  gap: calc(var(--spacing) * 3);
 }
 
 .photo-import-footer-actions {
   display: flex;
-  gap: 8px;
+  gap: calc(var(--spacing) * 2);
 }
 
 .editor-library-filename {
   display: block;
   overflow: hidden;
-  padding: 8px 3px 4px;
-  color: #e7e7e9;
-  font-size: 12px;
+  padding: calc(var(--spacing) * 2) calc(var(--spacing) * 1) calc(var(--spacing) * 1);
+  color: var(--color-text-primary);
+  font-size: var(--text-12);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -777,10 +778,14 @@ body {
   min-width: 0;
 }
 
+.adjust-panel [role="group"]:has(input[type="range"]:not([value="0"])) [data-slot="value"] {
+  color: var(--color-accent);
+}
+
 .editor-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: calc(var(--spacing) * 2);
   margin-top: auto;
 }
 
@@ -798,7 +803,7 @@ body {
 .preview-canvas {
   max-width: 100%;
   max-height: calc(100dvh - 160px);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 24px color-mix(in srgb, var(--color-surface-stage) 50%, transparent);
 }
 
 .crop-stage {
@@ -816,7 +821,7 @@ body {
 }
 
 .crop-stage:focus-visible {
-  outline: 2px solid hsl(var(--heroui-primary));
+  outline: 2px solid var(--color-accent);
   outline-offset: 4px;
 }
 
@@ -844,23 +849,23 @@ body {
 
 .crop-box {
   position: absolute;
-  border: 1px solid #fff;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--color-text-primary);
+  box-shadow: 0 0 0 9999px color-mix(in srgb, var(--color-surface-stage) 55%, transparent);
   background-image:
     linear-gradient(
       to right,
       transparent 33%,
-      rgba(255, 255, 255, 0.35) 33% calc(33% + 1px),
+      color-mix(in srgb, var(--color-text-primary) 35%, transparent) 33% calc(33% + 1px),
       transparent calc(33% + 1px) 66%,
-      rgba(255, 255, 255, 0.35) 66% calc(66% + 1px),
+      color-mix(in srgb, var(--color-text-primary) 35%, transparent) 66% calc(66% + 1px),
       transparent calc(66% + 1px)
     ),
     linear-gradient(
       to bottom,
       transparent 33%,
-      rgba(255, 255, 255, 0.35) 33% calc(33% + 1px),
+      color-mix(in srgb, var(--color-text-primary) 35%, transparent) 33% calc(33% + 1px),
       transparent calc(33% + 1px) 66%,
-      rgba(255, 255, 255, 0.35) 66% calc(66% + 1px),
+      color-mix(in srgb, var(--color-text-primary) 35%, transparent) 66% calc(66% + 1px),
       transparent calc(66% + 1px)
     );
   cursor: move;
@@ -871,9 +876,9 @@ body {
   width: 14px;
   height: 14px;
   transform: translate(-50%, -50%);
-  background: #fff;
-  border: 1px solid #006fee;
-  border-radius: 3px;
+  background: var(--color-text-primary);
+  border: 1px solid var(--color-surface-stage);
+  border-radius: var(--radius-control);
 }
 
 .crop-handle-nw,
@@ -1328,15 +1333,15 @@ body {
 
   .editor-upload {
     grid-row: 1;
-    padding: 4px 14px 10px;
-    border-bottom: 1px solid hsl(var(--heroui-default-200));
-    background: hsl(var(--heroui-content1));
+    padding: calc(var(--spacing) * 1) calc(var(--spacing) * 4) calc(var(--spacing) * 3);
+    border-bottom: 1px solid var(--color-border-default);
+    background: var(--color-surface-panel);
   }
 
   .editor-tabs {
     grid-row: 5;
-    padding: 4px 8px 0;
-    background: hsl(var(--heroui-content1));
+    padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2) 0;
+    background: var(--color-surface-panel);
   }
 
   .editor-workspace {
@@ -1356,8 +1361,8 @@ body {
   .editor-library-header {
     align-items: flex-start;
     flex-direction: column;
-    gap: 10px;
-    padding: 12px 14px;
+    gap: calc(var(--spacing) * 3);
+    padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
   }
 
   .editor-library-actions {
@@ -1370,13 +1375,13 @@ body {
 
   .editor-library-grid {
     grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-    gap: 9px;
-    padding: 12px;
+    gap: calc(var(--spacing) * 2);
+    padding: calc(var(--spacing) * 3);
   }
 
   .photo-import-grid {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 8px;
+    gap: calc(var(--spacing) * 2);
   }
 
   .photo-import-footer {
@@ -1396,9 +1401,9 @@ body {
     grid-row: 2;
     min-height: 0;
     max-height: none;
-    padding: 10px;
+    padding: calc(var(--spacing) * 3);
     overflow: hidden;
-    background: #111113;
+    background: var(--color-surface-stage);
   }
 
   .editor-stage[data-canvas-zoom="100%"],
@@ -1414,12 +1419,12 @@ body {
 
   .editor-filmstrip {
     grid-row: 3;
-    background: hsl(var(--heroui-content1));
+    background: var(--color-surface-panel);
   }
 
   .editor-filmstrip > div {
-    gap: 10px;
-    padding: 10px 14px;
+    gap: calc(var(--spacing) * 3);
+    padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
   }
 
   .editor-filmstrip img {
@@ -1432,17 +1437,18 @@ body {
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 12px 16px 16px;
-    background: hsl(var(--heroui-content1));
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4) calc(var(--spacing) * 4);
+    background: var(--color-surface-panel);
+    border-top: 1px solid var(--color-border-default);
   }
 
   .editor-actions {
     grid-row: 6;
     margin-top: 0;
-    padding: 8px 12px max(8px, env(safe-area-inset-bottom));
-    background: hsl(var(--heroui-content1));
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding: calc(var(--spacing) * 2) calc(var(--spacing) * 3)
+      max(calc(var(--spacing) * 2), env(safe-area-inset-bottom));
+    background: var(--color-surface-panel);
+    border-top: 1px solid var(--color-border-default);
   }
 
   .editor-actions {
