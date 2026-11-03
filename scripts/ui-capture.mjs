@@ -1,5 +1,5 @@
 // Captures UI screenshots with the locally installed Chrome over raw CDP (no extra dependencies).
-// Usage: node scripts/ui-capture.mjs [--base URL] [--suffix NAME] [--out DIR] [--export] [--states]
+// Usage: node scripts/ui-capture.mjs [--base URL] [--suffix NAME] [--out DIR] [--export] [--states] [--metrics] [--interactions] [--only-edit] [--photo FILE]
 import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -15,6 +15,10 @@ const suffix = option("suffix", "after");
 const outDir = option("out", "test-output/ui");
 const doExport = flag("export");
 const doStates = flag("states");
+const doMetrics = flag("metrics");
+const doInteractions = flag("interactions");
+const onlyEdit = flag("only-edit");
+const photoPath = option("photo", "");
 const CHROME = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const VIEWPORTS = [
   [1440, 900],
@@ -41,7 +45,55 @@ const chrome = spawn(
   { stdio: "ignore" },
 );
 
-const result = { shots: [], meta: [], downloads: [], notes: [] };
+const result = { shots: [], meta: [], downloads: [], notes: [], metrics: [] };
+
+// Evaluated in the page: canvas bitmap vs CSS size, scrollers, and the size and hit area of every control.
+const metricsExpression = (scope = "document") => `(() => {
+  const visible = (el) => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+  const label = (el) => el.getAttribute('aria-label') || el.innerText.replace(/\\s+/g, ' ').trim() || el.getAttribute('data-slot') || el.tagName;
+  const hitSize = (el) => {
+    const r = el.getBoundingClientRect();
+    const cx = r.x + r.width / 2;
+    const cy = r.y + r.height / 2;
+    const owns = (x, y) => { const hit = document.elementFromPoint(x, y); return !!hit && (el === hit || el.contains(hit)); };
+    const scan = (dx, dy) => { let n = 0; while (n < 60 && owns(cx + dx * (n + 1), cy + dy * (n + 1))) n++; return n; };
+    return [scan(1, 0) + scan(-1, 0) + 1, scan(0, 1) + scan(0, -1) + 1];
+  };
+  const canvas = document.querySelector('.preview-canvas, .crop-canvas');
+  const stage = document.querySelector('.editor-stage');
+  let canvasInfo = null;
+  if (canvas && stage) {
+    const c = canvas.getBoundingClientRect();
+    const s = stage.getBoundingClientRect();
+    canvasInfo = {
+      bitmap: [canvas.width, canvas.height],
+      css: [+c.width.toFixed(1), +c.height.toFixed(1)],
+      aspectErrorPct: +(Math.abs(canvas.width / canvas.height / (c.width / c.height) - 1) * 100).toFixed(2),
+      bitmapPerCssPx: +(canvas.width / c.width).toFixed(2),
+      dpr: devicePixelRatio,
+      stage: [+s.width.toFixed(1), +s.height.toFixed(1)],
+      insideStage: c.left >= s.left - 0.5 && c.right <= s.right + 0.5 && c.top >= s.top - 0.5 && c.bottom <= s.bottom + 0.5,
+    };
+  }
+  const scrollers = [...document.querySelectorAll('*')]
+    .filter((el) => { const s = getComputedStyle(el); return visible(el) && ((/(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 1) || (/(auto|scroll)/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 1)); })
+    .map((el) => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ').slice(0, 3).join('.') : '') + ' [' + el.scrollWidth + 'x' + el.scrollHeight + ' in ' + el.clientWidth + 'x' + el.clientHeight + ']');
+  const tools = document.querySelector('.editor-tools');
+  const t = tools && tools.getBoundingClientRect();
+  const slidersInView = tools ? [...tools.querySelectorAll('[data-slot="thumb"]')].filter((el) => { const r = el.getBoundingClientRect(); return r.top >= t.top && r.bottom <= t.bottom; }).length : 0;
+  const controls = [...${scope}.querySelectorAll('button, a[href], [role="tab"], [data-slot="thumb"]')]
+    .filter((el) => visible(el) && el.getBoundingClientRect().width > 0)
+    .map((el) => { const r = el.getBoundingClientRect(); const [hw, hh] = hitSize(el); const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return { control: label(el).slice(0, 40), size: [Math.round(r.width), Math.round(r.height)], hit: [hw, hh], at: [Math.round(r.x), Math.round(r.y)], coveredBy: top && !(el === top || el.contains(top)) ? top.tagName.toLowerCase() + '.' + String(top.className).split(' ').slice(0, 2).join('.') : undefined }; });
+  return {
+    viewport: [innerWidth, innerHeight],
+    documentOverflow: document.documentElement.scrollWidth > innerWidth + 1 || document.documentElement.scrollHeight > innerHeight + 1,
+    headerRightEdge: Math.round(Math.max(0, ...[...document.querySelectorAll('.workspace-heading button, .workspace-heading a')].filter((el) => el.getClientRects().length > 0).map((el) => el.getBoundingClientRect().right))),
+    canvas: canvasInfo,
+    scrollers,
+    slidersFullyVisibleInTools: slidersInView,
+    controls,
+  };
+})()`;
 
 try {
   let wsUrl;
@@ -198,9 +250,11 @@ try {
 
   await setViewport(1440, 900);
 
-  await navigate("/");
-  await recordMeta("/");
-  await shootAll("home");
+  if (!onlyEdit) {
+    await navigate("/");
+    await recordMeta("/");
+    await shootAll("home");
+  }
 
   await navigate("/edit");
   await recordMeta("/edit (empty)");
@@ -218,11 +272,129 @@ try {
     });
   }
 
-  await ev(`document.querySelector('button[aria-label="ลองภาพภูเขา"]').click(); true`);
+  if (photoPath) {
+    // Real upload through the hidden file input, then confirm the import dialog.
+    await send("DOM.enable");
+    const { root } = await send("DOM.getDocument");
+    const { nodeId } = await send("DOM.querySelector", { nodeId: root.nodeId, selector: "input[type=file]" });
+    await send("DOM.setFileInputFiles", { files: photoPath.split(","), nodeId });
+    await waitFor("[...document.querySelectorAll('button')].some((b) => b.innerText.startsWith('นำเข้ารูปที่เลือก'))");
+    await ev(
+      "[...document.querySelectorAll('button')].find((b) => b.innerText.startsWith('นำเข้ารูปที่เลือก')).click(); true",
+    );
+  } else {
+    await ev(`document.querySelector('button[aria-label="ลองภาพภูเขา"]').click(); true`);
+  }
   await waitFor("document.querySelector('.preview-canvas')");
   await sleep(1500);
   await recordMeta("/edit (photo)");
   await shootAll("edit-photo");
+
+  if (doMetrics) {
+    for (const [width, height] of VIEWPORTS) {
+      await setViewport(width, height);
+      await sleep(1500);
+      const menuToggle = "document.querySelector('.workspace-menu-toggle')";
+      const hasMenu = await ev(
+        `(() => { const t = ${menuToggle}; return Boolean(t) && t.getClientRects().length > 0; })()`,
+      );
+      const metrics = await ev(metricsExpression());
+      if (hasMenu) {
+        // Menu items are only reachable (and hit-testable) while the menu is open.
+        await ev(`${menuToggle}.click(); true`);
+        await sleep(400);
+        const menu = await ev(metricsExpression("document.querySelector('.workspace-menu')"));
+        metrics.menuControls = menu.controls;
+        await ev(`${menuToggle}.click(); true`);
+        await sleep(300);
+      }
+      result.metrics.push(metrics);
+    }
+  }
+
+  if (doInteractions) {
+    const clickSelector = async (selector, wait = 600) => {
+      await ev(`document.querySelector(${JSON.stringify(selector)}).click(); true`);
+      await sleep(wait);
+    };
+    await setViewport(1440, 900);
+
+    await clickSelector('[role=tab][aria-label="ตัดภาพ"]', 1500);
+    await shootAll("edit-crop");
+    if (doMetrics) {
+      for (const [width, height] of VIEWPORTS) {
+        await setViewport(width, height);
+        await sleep(1500);
+        const metrics = await ev(metricsExpression());
+        result.metrics.push({ ...metrics, label: "crop tab" });
+      }
+    }
+    await setViewport(1440, 900);
+    if (doMetrics) {
+      // Every tool panel on the phone: all of its controls count towards the touch-target table.
+      for (const tabLabel of ["ขอบ", "ข้อมูล"]) {
+        await clickSelector(`[role=tab][aria-label="${tabLabel}"]`, 800);
+        await setViewport(390, 844);
+        await sleep(1200);
+        result.metrics.push({ ...(await ev(metricsExpression())), label: `${tabLabel} tab` });
+        await setViewport(1440, 900);
+      }
+    }
+    await clickSelector('[role=tab][aria-label="ปรับแต่ง"]', 800);
+
+    await clickSelector(".editor-library-action", 1000);
+    await shootAll("edit-library");
+    await setViewport(1440, 900);
+    await clickText("กลับไปแก้ไข");
+    await sleep(800);
+
+    // The collapse state is shared: it hides the desktop panel and collapses the mobile sheet.
+    await clickSelector(".workspace-panel-toggle", 800);
+    await shootAll("edit-collapsed");
+    await setViewport(1440, 900);
+    await clickSelector(".workspace-panel-toggle", 800);
+
+    await setViewport(390, 844);
+    await sleep(600);
+    await clickSelector(".workspace-menu-toggle", 600);
+    const { data } = await send("Page.captureScreenshot", { format: "png" });
+    const menuFile = `${outDir}/edit-menu-open-390x844-${suffix}.png`;
+    await fs.writeFile(menuFile, Buffer.from(data, "base64"));
+    result.shots.push(menuFile);
+    await clickSelector(".workspace-menu-toggle", 400);
+
+    // Drag the sheet handle with real mouse input: up, then far down to collapse.
+    const sheetHeight = () =>
+      ev("Math.round(document.querySelector('.editor-sidebar').getBoundingClientRect().height)");
+    const dragHandle = async (deltaY) => {
+      const handle = await rectOf("document.querySelector('.editor-sheet-handle')");
+      const x = handle.x + handle.width / 2;
+      const y = handle.y + handle.height / 2;
+      await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+      await send("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", clickCount: 1 });
+      for (let step = 1; step <= 10; step++) {
+        await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y: y + (deltaY * step) / 10, buttons: 1 });
+      }
+      await send("Input.dispatchMouseEvent", {
+        type: "mouseReleased",
+        x,
+        y: y + deltaY,
+        button: "left",
+        clickCount: 1,
+      });
+      await sleep(500);
+    };
+    const sheet = { initial: await sheetHeight() };
+    await dragHandle(-120);
+    sheet.afterDragUp120 = await sheetHeight();
+    await dragHandle(400);
+    sheet.afterDragDown400 = await sheetHeight();
+    sheet.panelAfterDragDown = await ev("document.querySelector('.workspace-photo').dataset.panel");
+    await dragHandle(-200);
+    sheet.afterDragUp200 = await sheetHeight();
+    sheet.panelAfterDragUp = await ev("document.querySelector('.workspace-photo').dataset.panel");
+    result.notes.push({ sheet });
+  }
 
   if (doStates) {
     await setViewport(1440, 900);
@@ -283,48 +455,50 @@ try {
   }
 
   // Client-side navigation only: editor state lives in memory and is lost on reload.
-  await click('a[aria-label="หน้าแรก"]');
-  await waitFor("location.pathname === '/'");
-  await click('a[href="/layout/collage"]');
-  await waitFor("location.pathname === '/layout/collage'");
-  await waitFor("!document.querySelector('.layout-shell').hidden");
-  await sleep(2500);
-  await recordMeta("/layout/collage (photo)");
-  await shootAll("collage-photos");
+  if (!onlyEdit) {
+    await click('a[aria-label="หน้าแรก"]');
+    await waitFor("location.pathname === '/'");
+    await click('a[href="/layout/collage"]');
+    await waitFor("location.pathname === '/layout/collage'");
+    await waitFor("!document.querySelector('.layout-shell').hidden");
+    await sleep(2500);
+    await recordMeta("/layout/collage (photo)");
+    await shootAll("collage-photos");
 
-  if (doExport) {
-    await setViewport(1440, 900);
-    const done = await expectDownload("layout download (collage)");
-    await clickText("ดาวน์โหลด PNG");
-    await done();
-  }
+    if (doExport) {
+      await setViewport(1440, 900);
+      const done = await expectDownload("layout download (collage)");
+      await clickText("ดาวน์โหลด PNG");
+      await done();
+    }
 
-  await openLayout("freeform");
-  await shootAll("freeform-photos");
-  await openLayout("print");
-  await shootAll("print-photos");
+    await openLayout("freeform");
+    await shootAll("freeform-photos");
+    await openLayout("print");
+    await shootAll("print-photos");
 
-  if (doExport) {
-    await setViewport(1440, 900);
-    await ev(
-      `window.__printDoc = null; window.open = () => { const doc = document.implementation.createHTMLDocument(''); window.__printDoc = doc; return { document: doc, focus() {}, print() {}, close() {} }; }; true`,
-    );
-    await clickText("พิมพ์ / บันทึก PDF");
-    await waitFor(
-      "window.__printDoc && window.__printDoc.body.querySelector('img') && window.__printDoc.body.querySelector('img').src",
-    );
-    result.notes.push({ printDocumentTitle: await ev("window.__printDoc.title") });
-  }
+    if (doExport) {
+      await setViewport(1440, 900);
+      await ev(
+        `window.__printDoc = null; window.open = () => { const doc = document.implementation.createHTMLDocument(''); window.__printDoc = doc; return { document: doc, focus() {}, print() {}, close() {} }; }; true`,
+      );
+      await clickText("พิมพ์ / บันทึก PDF");
+      await waitFor(
+        "window.__printDoc && window.__printDoc.body.querySelector('img') && window.__printDoc.body.querySelector('img').src",
+      );
+      result.notes.push({ printDocumentTitle: await ev("window.__printDoc.title") });
+    }
 
-  await openLayout("composition");
-  await shootAll("composition-photos");
+    await openLayout("composition");
+    await shootAll("composition-photos");
 
-  // Empty layout pages use fresh loads and the same names as the baseline set.
-  for (const mode of ["collage", "freeform", "print", "composition"]) {
-    await navigate(`/layout/${mode}`);
-    await sleep(800);
-    await recordMeta(`/layout/${mode} (empty)`);
-    await shootAll(mode);
+    // Empty layout pages use fresh loads and the same names as the baseline set.
+    for (const mode of ["collage", "freeform", "print", "composition"]) {
+      await navigate(`/layout/${mode}`);
+      await sleep(800);
+      await recordMeta(`/layout/${mode} (empty)`);
+      await shootAll(mode);
+    }
   }
 
   console.log(JSON.stringify(result, null, 2));

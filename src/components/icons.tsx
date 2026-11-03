@@ -113,3 +113,16 @@ export const InfoIcon = () => (
     <path d="M12 11v5M12 8h.01" />
   </Icon>
 );
+
+export const MenuIcon = () => (
+  <Icon>
+    <path d="M4 6h16M4 12h16M4 18h16" />
+  </Icon>
+);
+
+export const PanelIcon = () => (
+  <Icon>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M15 4v16" />
+  </Icon>
+);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -43,7 +44,9 @@ import {
   DownloadIcon,
   GridIcon,
   InfoIcon,
+  MenuIcon,
   NextPhotoIcon,
+  PanelIcon,
   PreviousPhotoIcon,
 } from "./icons";
 import { InfoPanel } from "./InfoPanel";
@@ -54,6 +57,13 @@ import { Preview } from "./Preview";
 
 type TabId = "crop" | "adjust" | "border" | "info";
 type CanvasZoom = "fit" | "100%" | "200%";
+
+// Bottom sheet (below 1024px): the collapsed height shows only the handle and the tabs.
+const SHEET_COLLAPSED_HEIGHT = 104;
+const SHEET_DEFAULT_HEIGHT = 360;
+const SHEET_SNAP_HEIGHT = 200;
+const SHEET_MAX_VIEWPORT_RATIO = 0.7;
+const SHEET_DRAG_THRESHOLD = 4;
 
 const TAB_ITEMS = [
   { id: "crop", labelKey: "crop", icon: CropIcon },
@@ -90,6 +100,13 @@ export function Editor() {
   const [exportSize, setExportSize] = useState<PhotoExportSize>("original");
   const [customMegapixels, setCustomMegapixels] = useState(5);
   const editorStageRef = useRef<HTMLDivElement>(null);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  const [sheetHeight, setSheetHeight] = useState(SHEET_DEFAULT_HEIGHT);
+  const [sheetDragHeight, setSheetDragHeight] = useState<number | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const sheetClickSuppressed = useRef(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
   const [displayCanvasLongEdge, setDisplayCanvasLongEdge] = useState(0);
   const [devicePixelRatio, setDevicePixelRatio] = useState(1);
 
@@ -153,6 +170,77 @@ export function Editor() {
   }, [activePhotoId, canvasZoom, isPhotoLibraryOpen, tab, workspace]);
 
   const zoomScale = canvasZoom === "fit" ? null : canvasZoom === "100%" ? 1 : 2;
+
+  useEffect(() => {
+    if (!isMenuOpen) return undefined;
+    function dismiss(event: Event): void {
+      if (event instanceof KeyboardEvent) {
+        if (event.key === "Escape") setIsMenuOpen(false);
+        return;
+      }
+      const target = event.target;
+      if (target instanceof Node && (menuRef.current?.contains(target) || menuToggleRef.current?.contains(target))) {
+        return;
+      }
+      setIsMenuOpen(false);
+    }
+    document.addEventListener("keydown", dismiss);
+    document.addEventListener("pointerdown", dismiss);
+    return () => {
+      document.removeEventListener("keydown", dismiss);
+      document.removeEventListener("pointerdown", dismiss);
+    };
+  }, [isMenuOpen]);
+
+  function beginSheetDrag(event: ReactPointerEvent<HTMLButtonElement>): void {
+    sheetClickSuppressed.current = false;
+    const drag = {
+      startY: event.clientY,
+      startHeight: isPanelCollapsed ? SHEET_COLLAPSED_HEIGHT : sheetHeight,
+      moved: false,
+      height: null as number | null,
+    };
+
+    // Window listeners instead of pointer capture: the handle moves while the sheet resizes.
+    function handleMove(moveEvent: PointerEvent): void {
+      const delta = drag.startY - moveEvent.clientY;
+      if (Math.abs(delta) > SHEET_DRAG_THRESHOLD) drag.moved = true;
+      if (!drag.moved) return;
+      const maxHeight = Math.round(window.innerHeight * SHEET_MAX_VIEWPORT_RATIO);
+      drag.height = Math.min(maxHeight, Math.max(SHEET_COLLAPSED_HEIGHT, drag.startHeight + delta));
+      setSheetDragHeight(drag.height);
+    }
+
+    function handleEnd(): void {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleEnd);
+      window.removeEventListener("pointercancel", handleEnd);
+      if (drag.moved && drag.height !== null) {
+        sheetClickSuppressed.current = true;
+        if (drag.height < SHEET_SNAP_HEIGHT) {
+          setIsPanelCollapsed(true);
+        } else {
+          setIsPanelCollapsed(false);
+          setSheetHeight(drag.height);
+        }
+      }
+      setSheetDragHeight(null);
+    }
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleEnd);
+    window.addEventListener("pointercancel", handleEnd);
+  }
+
+  function toggleSheet(): void {
+    if (sheetClickSuppressed.current) {
+      sheetClickSuppressed.current = false;
+      return;
+    }
+    setIsPanelCollapsed((collapsed) => !collapsed);
+  }
+
+  const currentSheetHeight = sheetDragHeight ?? (isPanelCollapsed ? SHEET_COLLAPSED_HEIGHT : sheetHeight);
 
   const sourceLongEdge = decoded.bitmap ? Math.max(decoded.bitmap.width, decoded.bitmap.height) : MAX_PREVIEW_EDGE;
   const orientationSwapsAxes = previewOrientation?.rotation === 90 || previewOrientation?.rotation === 270;
@@ -395,6 +483,19 @@ export function Editor() {
     workspace === "photo" ? href === "/edit" : workspace === "layout" ? href !== "/edit" : true,
   );
   if (pathname !== "/" && !WORKSPACE_LINKS.some(({ href }) => href === pathname)) return null;
+  const languageGroup = (
+    <ButtonGroup size="sm" variant="flat" aria-label={t("language")}>
+      {(["th", "en"] as const).map((option) => (
+        <Button
+          key={option}
+          className={language === option ? "bg-surface-raised text-text-primary" : "bg-surface-bar text-text-secondary"}
+          onPress={() => setLanguage(option)}
+        >
+          {option.toUpperCase()}
+        </Button>
+      ))}
+    </ButtonGroup>
+  );
   const header = (
     <header className="workspace-header">
       <div className="workspace-heading">
@@ -406,21 +507,112 @@ export function Editor() {
           </p>
           {workspace !== "home" && <h1 className="sr-only">{t(workspace === "photo" ? "photoEditor" : layoutMode)}</h1>}
         </div>
-        <ButtonGroup size="sm" variant="flat" aria-label={t("language")}>
-          {(["th", "en"] as const).map((option) => (
+        {workspace === "photo" ? (
+          <>
             <Button
-              key={option}
-              className={
-                language === option ? "bg-surface-raised text-text-primary" : "bg-surface-bar text-text-secondary"
-              }
-              onPress={() => setLanguage(option)}
+              ref={menuToggleRef}
+              isIconOnly
+              size="sm"
+              variant="flat"
+              className="workspace-menu-toggle"
+              aria-label={t("moreActions")}
+              aria-expanded={isMenuOpen}
+              aria-controls="workspace-menu"
+              onPress={() => setIsMenuOpen((open) => !open)}
             >
-              {option.toUpperCase()}
+              <MenuIcon />
             </Button>
-          ))}
-        </ButtonGroup>
+            <div className="workspace-menu" id="workspace-menu" ref={menuRef} data-open={isMenuOpen}>
+              <nav className="workspace-switch" aria-label={t("workspaceMode")}>
+                <Link href="/edit" scroll={false} aria-current="page">
+                  {t("photoEditor")}
+                </Link>
+                <Link href="/layout/collage" scroll={false} onClick={() => setIsMenuOpen(false)}>
+                  {t("layout")}
+                </Link>
+              </nav>
+              {languageGroup}
+              {photos.length > 0 && (
+                <div className="editor-upload">
+                  <Button
+                    className="editor-library-action"
+                    size="sm"
+                    variant="light"
+                    startContent={<GridIcon />}
+                    onPress={() => {
+                      setIsMenuOpen(false);
+                      setIsPhotoLibraryOpen(true);
+                    }}
+                  >
+                    <span>{t("photoLibrary")}</span>
+                    <span className="editor-library-count">{photos.length}</span>
+                  </Button>
+                </div>
+              )}
+              {photos.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="light"
+                  color="danger"
+                  isDisabled={isExporting}
+                  onPress={() => {
+                    setIsMenuOpen(false);
+                    setIsClearConfirmOpen(true);
+                  }}
+                >
+                  {t("resetPhotos")}
+                </Button>
+              )}
+              {photos.length > 1 && (
+                <Button
+                  size="sm"
+                  variant="bordered"
+                  isDisabled={isExporting || straightenDraft !== null}
+                  startContent={<DownloadIcon />}
+                  onPress={() => {
+                    setIsMenuOpen(false);
+                    setExportEntries(photos);
+                  }}
+                >
+                  {exportProgress
+                    ? `${t("exporting")} ${exportProgress.done}/${exportProgress.total}`
+                    : `${t("downloadAll")} (${photos.length})`}
+                </Button>
+              )}
+              {activeEntry && (
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="flat"
+                  className="workspace-panel-toggle"
+                  aria-label={t("toggleToolPanel")}
+                  aria-expanded={!isPanelCollapsed}
+                  aria-controls="editor-tools"
+                  onPress={() => setIsPanelCollapsed((collapsed) => !collapsed)}
+                >
+                  <PanelIcon />
+                </Button>
+              )}
+            </div>
+            <div className="editor-actions">
+              <Button
+                color="primary"
+                size="sm"
+                className="font-semibold"
+                isDisabled={!activeEntry || isExporting || straightenDraft !== null}
+                startContent={<DownloadIcon />}
+                onPress={() => activeEntry && setExportEntries([activeEntry])}
+              >
+                {t("downloadPhoto")}
+              </Button>
+              {exportError && <Alert color="danger" title={exportError} />}
+            </div>
+          </>
+        ) : (
+          languageGroup
+        )}
       </div>
-      {workspaceLinks.length > 1 && (
+      {workspace !== "photo" && workspaceLinks.length > 1 && (
         <nav className="workspace-nav" aria-label={t("workspaceMode")}>
           {workspaceLinks.map(({ href, labelKey }) => (
             <Link key={href} href={href} scroll={false} aria-current={pathname === href ? "page" : undefined}>
@@ -433,7 +625,13 @@ export function Editor() {
   );
 
   return (
-    <div className="workspace-shell" hidden={workspace === "home"}>
+    <div
+      className={`workspace-shell${workspace === "photo" ? " workspace-photo" : ""}`}
+      data-view={isPhotoLibraryOpen ? "library" : photos.length === 0 ? "empty" : "editing"}
+      data-panel={isPanelCollapsed ? "collapsed" : "open"}
+      style={{ "--editor-sheet-height": `${currentSheetHeight}px` } as CSSProperties}
+      hidden={workspace === "home"}
+    >
       {header}
       <div className="workspace-content">
         <main
@@ -447,19 +645,17 @@ export function Editor() {
           hidden={workspace !== "photo"}
         >
           <aside className="editor-sidebar">
-            {photos.length > 0 && (
-              <div className="editor-upload">
-                <Button
-                  className="editor-library-action"
-                  variant="light"
-                  startContent={<GridIcon />}
-                  onPress={() => setIsPhotoLibraryOpen(true)}
-                >
-                  <span>{t("photoLibrary")}</span>
-                  <span className="editor-library-count">{photos.length}</span>
-                </Button>
-              </div>
-            )}
+            <button
+              type="button"
+              className="editor-sheet-handle"
+              aria-label={t("toggleToolPanel")}
+              aria-expanded={!isPanelCollapsed}
+              aria-controls="editor-tools"
+              onPointerDown={beginSheetDrag}
+              onClick={toggleSheet}
+            >
+              <span aria-hidden="true" />
+            </button>
             {activeEntry && (
               <Tabs
                 className="editor-tabs"
@@ -492,39 +688,8 @@ export function Editor() {
                 ))}
               </Tabs>
             )}
-            <div className="editor-tools">{activeEntry && renderToolPanel(activeEntry)}</div>
-            <div className="editor-actions">
-              <Button
-                color="primary"
-                isDisabled={!activeEntry || isExporting || straightenDraft !== null}
-                startContent={<DownloadIcon />}
-                onPress={() => activeEntry && setExportEntries([activeEntry])}
-              >
-                {t("downloadPhoto")}
-              </Button>
-              {photos.length > 1 && (
-                <Button
-                  variant="bordered"
-                  isDisabled={isExporting || straightenDraft !== null}
-                  startContent={<DownloadIcon />}
-                  onPress={() => setExportEntries(photos)}
-                >
-                  {exportProgress
-                    ? `${t("exporting")} ${exportProgress.done}/${exportProgress.total}`
-                    : `${t("downloadAll")} (${photos.length})`}
-                </Button>
-              )}
-              {photos.length > 0 && (
-                <Button
-                  variant="light"
-                  color="danger"
-                  isDisabled={isExporting}
-                  onPress={() => setIsClearConfirmOpen(true)}
-                >
-                  {t("resetPhotos")}
-                </Button>
-              )}
-              {exportError && <Alert color="danger" title={exportError} />}
+            <div className="editor-tools" id="editor-tools">
+              {activeEntry && renderToolPanel(activeEntry)}
             </div>
           </aside>
           <section className="editor-workspace">
@@ -538,7 +703,7 @@ export function Editor() {
               />
             ) : (
               <>
-                <div className="editor-stage" data-canvas-zoom={canvasZoom} ref={editorStageRef}>
+                <div className="editor-stage-frame" data-tool={tab}>
                   {activeEntry && (
                     <div className="canvas-zoom-controls">
                       <ButtonGroup size="sm" variant="flat" aria-label={t("canvasZoom")}>
@@ -563,6 +728,7 @@ export function Editor() {
                     <Button
                       isIconOnly
                       variant="flat"
+                      className="editor-stage-nav editor-stage-prev"
                       aria-label={t("previousPhoto")}
                       isDisabled={activePhotoIndex <= 0}
                       onPress={() => activePhotoIndex > 0 && selectPhoto(photos[activePhotoIndex - 1].id)}
@@ -570,11 +736,14 @@ export function Editor() {
                       <PreviousPhotoIcon />
                     </Button>
                   )}
-                  {renderStage()}
+                  <div className="editor-stage" data-canvas-zoom={canvasZoom} ref={editorStageRef}>
+                    {renderStage()}
+                  </div>
                   {photos.length > 1 && (
                     <Button
                       isIconOnly
                       variant="flat"
+                      className="editor-stage-nav editor-stage-next"
                       aria-label={t("nextPhoto")}
                       isDisabled={activePhotoIndex >= photos.length - 1}
                       onPress={() =>

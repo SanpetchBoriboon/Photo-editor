@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { prepareBrandLogos } from "@/lib/brandLogos";
 import { renderEdit } from "@/lib/renderPipeline";
 import type { CaptionOverrides, EditSettings, ExifData } from "@/lib/types";
@@ -39,15 +40,18 @@ export function Preview({ source, settings, exif, captionOverrides, zoomScale }:
     };
   }, [source, settings, exif, captionOverrides]);
 
-  const canvasStyle =
+  const zoomStyle =
     zoomScale === null || renderedSize.width === 0
-      ? undefined
+      ? {}
       : {
           width: `${renderedSize.width * zoomScale}px`,
           height: `${renderedSize.height * zoomScale}px`,
           maxWidth: "none",
           maxHeight: "none",
         };
+  // The stylesheet sizes the canvas from this ratio so it fills the stage without stretching.
+  const ratioStyle = renderedSize.width === 0 ? {} : { "--canvas-ratio": renderedSize.width / renderedSize.height };
+  const canvasStyle = { ...ratioStyle, ...zoomStyle } as CSSProperties;
 
   return <canvas ref={canvasRef} className="preview-canvas" style={canvasStyle} />;
 }

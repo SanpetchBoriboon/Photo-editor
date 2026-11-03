@@ -39,7 +39,7 @@ Home preview photographs are stored locally, sourced from Unsplash: [mountain](h
 
 ## Testing
 
-Run `npm run build && npm start`, then `node scripts/ui-capture.mjs` to save 1440x900, 1024x768 and 390x844 screenshots of every page to `test-output/ui/` using the locally installed Chrome (set `CHROME_PATH` if it is not in the default macOS location). Options: `--suffix NAME` (default `after`), `--base URL`, `--out DIR`, `--states` (hover/focus captures) and `--export` (also downloads a photo and a layout and prints the file names).
+Run `npm run build && npm start`, then `node scripts/ui-capture.mjs` to save 1440x900, 1024x768 and 390x844 screenshots of every page to `test-output/ui/` using the locally installed Chrome (set `CHROME_PATH` if it is not in the default macOS location). Options: `--suffix NAME` (default `after`), `--base URL`, `--out DIR`, `--states` (hover/focus captures), `--export` (also downloads a photo and a layout and prints the file names), `--only-edit` (skip the home and layout pages), `--photo FILE` (upload a real photo instead of the bundled sample), `--metrics` (canvas bitmap vs CSS size, scrollers, control sizes and hit areas as JSON) and `--interactions` (crop tab, library, collapsed panel, mobile menu and bottom-sheet drag).
 
 ## Code Formatting
 

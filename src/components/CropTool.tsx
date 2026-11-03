@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { KeyboardEvent, PointerEvent } from "react";
+import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import { moveCrop, resizeCrop } from "@/lib/cropMath";
 import type { CropHandle, CropRect } from "@/lib/types";
 import { useCanvasMirror } from "@/hooks/useCanvasMirror";
@@ -75,10 +75,10 @@ export function CropTool({ source, crop, aspect, zoomScale, onChange, onConfirm 
   }
 
   const visibleHandles = aspect === null ? [...CORNER_HANDLES, ...EDGE_HANDLES] : CORNER_HANDLES;
-  const stageStyle =
-    zoomScale === null
-      ? undefined
-      : { width: `${source.width * zoomScale}px`, height: `${source.height * zoomScale}px` };
+  const stageStyle = {
+    "--canvas-ratio": source.width / source.height,
+    ...(zoomScale === null ? {} : { width: `${source.width * zoomScale}px`, height: `${source.height * zoomScale}px` }),
+  } as CSSProperties;
 
   return (
     <div

@@ -20,25 +20,23 @@ export function Filmstrip({ photos, activeId, onSelect, onRemove }: FilmstripPro
   }, [activeId]);
 
   return (
-    <div className="flex gap-3 overflow-x-auto px-5 py-3">
+    <div className="filmstrip">
       {photos.map((photo) => (
-        <div key={photo.id} className="relative shrink-0">
+        <div key={photo.id} className="filmstrip-item" data-active={photo.id === activeId}>
           <button
             ref={photo.id === activeId ? activePhotoRef : undefined}
             type="button"
             aria-label={`${t("selectedPhoto")} ${photo.fileName}`}
             aria-pressed={photo.id === activeId}
             onClick={() => onSelect(photo.id)}
-            className={`block cursor-pointer overflow-hidden rounded-lg border-2 ${
-              photo.id === activeId ? "border-text-primary" : "border-transparent opacity-70"
-            }`}
+            className="filmstrip-photo"
           >
             <Image
               removeWrapper
               radius="none"
               src={photo.thumbnailUrl}
               alt={photo.fileName}
-              className="h-20 w-20 object-cover"
+              className="filmstrip-image"
             />
           </button>
           <Button
@@ -46,7 +44,7 @@ export function Filmstrip({ photos, activeId, onSelect, onRemove }: FilmstripPro
             size="sm"
             radius="full"
             aria-label={`${t("removePhoto")} ${photo.fileName}`}
-            className="absolute -right-2 -top-2 z-10 h-6 w-6 min-w-6"
+            className="filmstrip-remove"
             onPress={() => onRemove(photo.id)}
           >
             <CloseIcon />

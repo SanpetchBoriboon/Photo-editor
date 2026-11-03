@@ -170,6 +170,8 @@ export const messages = {
     nextPhoto: "รูปถัดไป",
     removePhoto: "ลบรูป",
     resetPhotos: "ล้างรูปทั้งหมด",
+    moreActions: "เมนูเพิ่มเติม",
+    toggleToolPanel: "แสดงหรือซ่อนแผงเครื่องมือ",
   },
   en: {
     appTitle: APP_NAME,
@@ -339,6 +341,8 @@ export const messages = {
     nextPhoto: "Next photo",
     removePhoto: "Remove photo",
     resetPhotos: "Reset all photos",
+    moreActions: "More actions",
+    toggleToolPanel: "Show or hide tool panel",
   },
 } as const;
 
