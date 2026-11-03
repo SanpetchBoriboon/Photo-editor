@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sarabun } from "next/font/google";
 import { Providers } from "@/components/Providers";
+import { APP_NAME } from "@/lib/brand";
 import "./globals.css";
 
 const sarabun = Sarabun({
@@ -11,7 +12,7 @@ const sarabun = Sarabun({
 });
 
 export const metadata: Metadata = {
-  title: "Stillframe | Photo Editor",
+  title: `${APP_NAME} | Photo Editor`,
   description: "Crop, adjust and add borders with camera info to your photos",
 };
 

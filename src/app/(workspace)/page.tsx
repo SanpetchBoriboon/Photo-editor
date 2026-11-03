@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button, ButtonGroup } from "@heroui/react";
 import { AdjustIcon, BorderIcon, NextPhotoIcon } from "@/components/icons";
 import { useLanguage } from "@/components/Providers";
+import { APP_NAME } from "@/lib/brand";
 
 export default function HomePage() {
   const { language, setLanguage, t } = useLanguage();
@@ -12,10 +13,7 @@ export default function HomePage() {
   return (
     <div className="home-shell">
       <header className="home-header">
-        <h1>
-          <span>Still</span>
-          <span className="text-primary">frame</span>
-        </h1>
+        <h1>{APP_NAME}</h1>
         <ButtonGroup size="sm" variant="flat" aria-label={t("language")}>
           {(["th", "en"] as const).map((option) => (
             <Button

@@ -26,7 +26,7 @@ Interactive previews are reduced to 800 px on the longest edge while an adjustme
 
 Upload photos on any workspace page, then use the navigation links to switch tools. Crops, color adjustments, borders, and captions from the photo editor are included in layouts.
 
-The home page at `/` offers two choices: photo editing at `/edit` and layout editing at `/layout/collage`. Select the Stillframe brand in either workspace to return home. Layout pages are available at `/layout/collage`, `/layout/freeform`, `/layout/print`, and `/layout/composition`. `/layout` redirects to the collage page. Each URL can be opened directly and supports browser back/forward navigation.
+The home page at `/` offers two choices: photo editing at `/edit` and layout editing at `/layout/collage`. Select the Lumo brand in either workspace to return home. Layout pages are available at `/layout/collage`, `/layout/freeform`, `/layout/print`, and `/layout/composition`. `/layout` redirects to the collage page. Each URL can be opened directly and supports browser back/forward navigation.
 
 - **Collage**: choose grid, columns, rows, or a featured-photo template; select photos, change their order, and adjust margins, gaps, background, and photo fit.
 - **Freeform**: select and drag photos on the canvas, resize using the corner handle or numeric controls, and change layer order. Arrow keys move the focused photo; Shift increases the step.

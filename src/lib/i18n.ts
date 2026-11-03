@@ -1,8 +1,10 @@
+import { APP_NAME } from "./brand";
+
 export type Language = "th" | "en";
 
 export const messages = {
   th: {
-    appTitle: "Stillframe",
+    appTitle: APP_NAME,
     home: "หน้าแรก",
     chooseWorkspace: "เลือกพื้นที่ทำงาน",
     workspaceMode: "พื้นที่ทำงาน",
@@ -65,7 +67,7 @@ export const messages = {
     upload: "เลือกรูปภาพ (เลือกได้หลายรูป)",
     selectPhotoButton: "เลือกรูปภาพ",
     dropPhotosHere: "ลากรูปมาวางที่นี่",
-    welcomeToEditor: "ยินดีต้อนรับสู่ Stillframe",
+    welcomeToEditor: `ยินดีต้อนรับสู่ ${APP_NAME}`,
     orSelectFromComputer: "หรือเลือกไฟล์จากคอมพิวเตอร์",
     samplePhotosPrompt: "ยังไม่มีรูป? ลองภาพตัวอย่าง",
     sampleMountain: "ลองภาพภูเขา",
@@ -170,7 +172,7 @@ export const messages = {
     resetPhotos: "ล้างรูปทั้งหมด",
   },
   en: {
-    appTitle: "Stillframe",
+    appTitle: APP_NAME,
     home: "Home",
     chooseWorkspace: "Choose your workspace",
     workspaceMode: "Workspace",
@@ -233,7 +235,7 @@ export const messages = {
     upload: "Choose photos (multiple allowed)",
     selectPhotoButton: "Select a photo",
     dropPhotosHere: "Drop photos here",
-    welcomeToEditor: "Welcome to Stillframe",
+    welcomeToEditor: `Welcome to ${APP_NAME}`,
     orSelectFromComputer: "or select a file from your computer",
     samplePhotosPrompt: "No photo on hand? Try a sample photo.",
     sampleMountain: "Try the mountain sample",

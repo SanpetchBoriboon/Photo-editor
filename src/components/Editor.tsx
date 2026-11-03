@@ -20,6 +20,7 @@ import {
 } from "@heroui/react";
 import { useDecodedPhoto } from "@/hooks/useDecodedPhoto";
 import { useEditorState } from "@/hooks/useEditorState";
+import { APP_NAME } from "@/lib/brand";
 import { MAX_PREVIEW_EDGE } from "@/lib/constants";
 import { getBorderExpansionFactor } from "@/lib/borderRenderer";
 import { getCaptionTexts, hasMissingCaptionFields } from "@/lib/caption";
@@ -400,8 +401,7 @@ export function Editor() {
         <div className="workspace-heading-start">
           <h1 className="text-xl font-semibold">
             <Link href="/" aria-label={t("home")}>
-              <span className="text-default-500">Still</span>
-              <span className="text-primary">frame</span>
+              {APP_NAME}
             </Link>
           </h1>
         </div>

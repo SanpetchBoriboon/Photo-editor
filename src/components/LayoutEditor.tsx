@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import Image from "next/image";
 import { Alert, Button, Select, SelectItem, Spinner } from "@heroui/react";
+import { APP_NAME, APP_SLUG } from "@/lib/brand";
 import { MAX_CPU_PREVIEW_EDGE } from "@/lib/constants";
 import { prepareBrandLogos } from "@/lib/brandLogos";
 import { decodeImage } from "@/lib/photoIO";
@@ -273,7 +274,7 @@ export function LayoutEditor({
       }
       if (printWindow) {
         const page = printWindow.document;
-        page.title = "Stillframe";
+        page.title = APP_NAME;
         const style = page.createElement("style");
         style.textContent = `@page { size: ${(settings.width / 300) * 25.4}mm ${(settings.height / 300) * 25.4}mm; margin: 0; } body { margin: 0; } img { display: block; width: 100%; } @media screen { img { max-width: 800px; margin: auto; } }`;
         const image = page.createElement("img");
@@ -295,7 +296,7 @@ export function LayoutEditor({
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `stillframe-${mode}-${settings.width}x${settings.height}.png`;
+        link.download = `${APP_SLUG}-${mode}-${settings.width}x${settings.height}.png`;
         document.body.append(link);
         link.click();
         link.remove();
